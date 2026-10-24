@@ -1,0 +1,27 @@
+// Copyright 2023 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { Meta, StoryFn } from '@storybook/react';
+
+import { action } from '@storybook/addon-actions';
+import type { PropsType } from './UsernameOnboardingModal.dom.tsx';
+import { UsernameOnboardingModal } from './UsernameOnboardingModal.dom.tsx';
+
+const { i18n } = window.SignalContext;
+
+export default {
+  component: UsernameOnboardingModal,
+  title: 'Components/UsernameOnboardingModal',
+  args: {
+    i18n,
+    onNext: action('onNext'),
+    onSkip: action('onSkip'),
+    onClose: action('onClose'),
+  },
+} satisfies Meta<PropsType>;
+
+const Template: StoryFn<PropsType> = args => {
+  return <UsernameOnboardingModal {...args} />;
+};
+
+export const Normal = Template.bind({});

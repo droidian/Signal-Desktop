@@ -1,0 +1,1 @@
+signal,ứng dụng nhắn tin,tin nhắn,mã hóa,riêng tư,bảo mật,quyền riêng tư,nhóm,miễn phí

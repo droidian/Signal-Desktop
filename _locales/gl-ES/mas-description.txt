@@ -1,0 +1,21 @@
+Signal é unha aplicación de mensaxería coa privacidade como lema. É gratuíta e moi doada de empregar, ademais de contar cunha encriptación de extremo a extremo de alta seguridade que mantén as túas conversas e chamadas completamente privadas. Signal non pode ler as túas mensaxes nin escoitar as chamadas, e ningunha outra persoa pode facelo. 
+
+• Signal en MacOS vincúlase con Signal no teu teléfono. 
+
+• Envía mensaxes de texto, voz, fotos, vídeos, GIF e arquivos de maneira gratuíta e con encriptación de extremo a extremo. 
+
+• Non perdas ningunha conversa grazas ás conversas de grupo de até 1000 persoas. Controla quen pode publicar e xestiona os membros do grupo na configuración de permisos de administrador.
+
+• Chama os teus amigos con videochamadas e chamadas de voz encriptadas de extremo a extremo e sen interrupcións. Podes facer chamadas de grupo de até 75 persoas.
+
+• Signal creouse pola túa privacidade. Non sabemos nada sobre ti nin con quen falas. Os nosos protocolos de Signal de código aberto impídennos ler as túas mensaxes ou escoitar as túas chamadas. Nin nós nin ninguén máis. Sen trampas, sen recompilación de datos e sen compromisos. 
+
+• Comparte historias con fotos, textos e vídeos que desaparecen tras 24 horas. Na configuración de privacidade podes elixir quen pode ver cada historia.
+
+• Signal é independente e non ten ánimo de lucro: un tipo diferente de tecnoloxía dun tipo de organización diferente. Como organización sen ánimo de lucro 501c3 existimos grazas ás túas doazóns, sen anunciantes nin investidores. 
+
+• Para obter axuda, resolver dúbidas ou máis información, visita https://support.signal.org/
+
+Para comprobar o noso código fonte, visita https://github.com/signalapp 
+
+Síguenos en X @signalapp e Instagram @signal_app

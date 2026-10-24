@@ -1,9 +1,9 @@
 // Copyright 2023 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-@import '../mixins.scss';
-@import '../colors.scss';
-@import '../fonts.scss';
+@use '../mixins.scss';
+@use '../colors.scss';
+@use '../fonts.scss';
 
 .base {
   max-width: 468px;
@@ -15,14 +15,7 @@
   flex-direction: column;
   border-radius: 8px;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 8px 20px 0 rgba(0, 0, 0, 0.33);
-
-  @include light-theme() {
-    background: $color-white;
-  }
-
-  @include dark-theme() {
-    background: $color-gray-75;
-  }
+  background: light-dark(colors.$color-white, colors.$color-gray-75);
 }
 
 .grow {
@@ -31,32 +24,18 @@
 
 .text {
   font: {
-    family: $inter;
+    family: fonts.$inter;
     size: 14px;
   }
   margin: 0;
-
-  @include light-theme() {
-    color: $color-gray-90;
-  }
-
-  @include dark-theme() {
-    color: $color-gray-05;
-  }
+  color: light-dark(colors.$color-gray-90, colors.$color-gray-05);
 }
 
 .title {
   composes: text;
   font-weight: 500;
   margin-bottom: 12px;
-
-  @include light-theme() {
-    color: $color-gray-90;
-  }
-
-  @include dark-theme() {
-    color: $color-white;
-  }
+  color: light-dark(colors.$color-gray-90, colors.$color-white);
 }
 
 .bottom {
@@ -73,32 +52,17 @@
   border-radius: 15px;
   padding-block: 0;
   padding-inline: 17px;
-
-  @include light-theme() {
-    color: $color-gray-90;
-    border: 1px solid $color-gray-90;
-    background: transparent;
-  }
-
-  @include dark-theme() {
-    color: $color-white;
-    border: 1px solid $color-white;
-    background: transparent;
-  }
+  color: light-dark(colors.$color-gray-90, colors.$color-white);
+  border: 1px solid light-dark(colors.$color-gray-90, colors.$color-white);
+  background: transparent;
 }
 
 .pill-primary {
   composes: pill;
-
-  @include light-theme() {
-    border: none;
-    background-color: $color-ultramarine;
-    color: $color-white;
-  }
-
-  @include dark-theme() {
-    border: none;
-    background-color: $color-ultramarine-light;
-    color: $color-white;
-  }
+  border: none;
+  background-color: light-dark(
+    colors.$color-ultramarine,
+    colors.$color-ultramarine-light
+  );
+  color: light-dark(colors.$color-white, colors.$color-white);
 }

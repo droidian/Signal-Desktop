@@ -4,6 +4,8 @@ node_modules_bkp
 coverage/*
 build/curve25519_compiled.js
 build/compact-locales
+build/*.policy
+build/emoji-data.json
 stylesheets/*.css.map
 /dist
 .DS_Store
@@ -16,17 +18,14 @@ release/
 
 /sql/
 /start.sh
-.eslintcache
 .stylelintcache
 tsconfig.tsbuildinfo
 .smartling-source.sh
 
 # generated files
-js/components.js
-js/util_worker.js
 libtextsecure/components.js
 stylesheets/*.css
-!stylesheets/webrtc_internals.css
+!stylesheets/tailwind-config.css
 /storybook-static/
 preload.bundle.*
 preload.wrapper.js
@@ -35,8 +34,10 @@ ts/sql/mainWorker.bundle.js.LICENSE.txt
 build/ICUMessageParams.d.ts
 
 # React / TypeScript
+build/**/*.js
 app/*.js
 ts/**/*.js
+!ts/windows/main/tsx.js
 ts/protobuf/*.d.ts
 
 # CSS Modules
@@ -45,5 +46,6 @@ ts/protobuf/*.d.ts
 # Editors
 /.idea
 /.vscode
+/.zed
 *.sublime*
 *.map

@@ -1,0 +1,20 @@
+{
+  "smartling": {
+    "translate_paths": [
+      {
+        "path": "*/messageformat",
+        "key": "{*}/messageformat",
+        "character_limit": "*/limit",
+        "instruction": "*/description"
+      }
+    ]
+  },
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal uses your camera for video calling.",
+    "description": "Presented to user by macOS when requesting camera permissions"
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Signal needs access to your microphone to make and receive phone calls and record voice messages.",
+    "description": "Presented to user by macOS when requesting microphone permissions"
+  }
+}

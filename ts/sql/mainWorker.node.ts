@@ -1,0 +1,182 @@
+// Copyright 2021 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { parentPort } from 'node:worker_threads';
+import { serialize, deserialize } from 'node:v8';
+
+import type {
+  WrappedWorkerRequest,
+  WrappedWorkerResponse,
+} from './main.main.ts';
+import type { WritableDB } from './Interface.std.ts';
+import { initialize, DataReader, DataWriter, removeDB } from './Server.node.ts';
+import { SqliteErrorKind, parseSqliteError } from './errors.std.ts';
+import { sqlLogger as logger } from './sqlLogger.node.ts';
+import { WalCheckpoints } from './WalCheckpoints.std.ts';
+
+if (!parentPort) {
+  throw new Error('Must run as a worker thread');
+}
+
+const port = parentPort;
+
+// oxlint-disable-next-line typescript/no-explicit-any
+function respond(seq: number, response?: any) {
+  const wrappedResponse: WrappedWorkerResponse = {
+    type: 'response',
+    seq,
+    error: undefined,
+    errorKind: undefined,
+    response,
+  };
+  port.postMessage(wrappedResponse);
+}
+
+let db: WritableDB | undefined;
+let isPrimary = false;
+let isRemoved = false;
+
+const onMessage = (
+  { seq, request }: WrappedWorkerRequest,
+  isRetrying = false
+): void => {
+  try {
+    if (request.type === 'init') {
+      isPrimary = request.isPrimary;
+      isRemoved = false;
+
+      if (isPrimary) {
+        WalCheckpoints.setOnCheckpointNeeded(reason => {
+          const message: WrappedWorkerResponse = {
+            type: 'walCheckpointNeeded',
+            reason,
+          };
+          port.postMessage(message);
+        });
+      }
+
+      db = initialize({
+        ...request.options,
+        isPrimary,
+      });
+
+      respond(seq, undefined);
+      return;
+    }
+
+    // 'close' is sent on shutdown, but we already removed the database.
+    if (isRemoved && request.type === 'close') {
+      respond(seq, undefined);
+      process.exit(0);
+      return;
+    }
+
+    // Removing database does not require active connection.
+    if (request.type === 'removeDB') {
+      try {
+        if (db) {
+          if (isPrimary) {
+            DataWriter.close(db);
+          } else {
+            DataReader.close(db);
+          }
+          db = undefined;
+        }
+      } catch (error) {
+        logger.error('Failed to close database before removal');
+      }
+
+      if (isPrimary) {
+        removeDB();
+      }
+
+      isRemoved = true;
+
+      respond(seq, undefined);
+      return;
+    }
+
+    if (!db) {
+      throw new Error('Not initialized');
+    }
+
+    if (request.type === 'close') {
+      if (isPrimary) {
+        DataWriter.close(db);
+      } else {
+        DataReader.close(db);
+      }
+      db = undefined;
+
+      respond(seq, undefined);
+      process.exit(0);
+      return;
+    }
+
+    if (request.type === 'walCheckpoint') {
+      if (db != null) {
+        WalCheckpoints.runImmediately(db, logger, request.reason);
+      }
+      respond(seq, undefined);
+      return;
+    }
+
+    if (request.type === 'sqlCall:read' || request.type === 'sqlCall:write') {
+      const DataInterface =
+        request.type === 'sqlCall:read' ? DataReader : DataWriter;
+      // oxlint-disable-next-line typescript/no-explicit-any
+      const method = (DataInterface as any)[request.method];
+      if (typeof method !== 'function') {
+        throw new Error(`Invalid sql method: ${request.method} ${method}`);
+      }
+
+      const args =
+        request.encoding === 'js' ? request.args : deserialize(request.data);
+
+      const start = performance.now();
+      const result = method(db, ...args);
+      const duration = performance.now() - start;
+
+      respond(seq, {
+        result: request.encoding === 'js' ? result : serialize(result),
+        duration,
+      });
+    } else {
+      throw new Error('Unexpected request type');
+    }
+  } catch (error) {
+    const errorKind = parseSqliteError(error);
+
+    if (
+      (errorKind === SqliteErrorKind.Corrupted ||
+        errorKind === SqliteErrorKind.Logic) &&
+      db != null
+    ) {
+      const wasRecovered = DataWriter.runCorruptionChecks(db);
+      if (
+        wasRecovered &&
+        !isRetrying &&
+        // Don't retry 'init'/'close'/'removeDB' automatically and notify user
+        // about the database error (even on successful recovery).
+        (request.type === 'sqlCall:read' || request.type === 'sqlCall:write')
+      ) {
+        logger.error(`Retrying request: ${request.type}`);
+        return onMessage({ seq, request }, true);
+      }
+    }
+
+    const wrappedResponse: WrappedWorkerResponse = {
+      type: 'response',
+      seq,
+      error: {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+      },
+      errorKind,
+      response: undefined,
+    };
+    port.postMessage(wrappedResponse);
+  }
+};
+port.on('message', (message: WrappedWorkerRequest) => onMessage(message));

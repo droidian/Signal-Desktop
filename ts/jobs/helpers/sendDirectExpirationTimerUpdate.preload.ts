@@ -1,0 +1,161 @@
+// Copyright 2022 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { ContentHint } from '@signalapp/libsignal-client';
+
+import { getSendOptions } from '../../util/getSendOptions.preload.ts';
+import {
+  isDirectConversation,
+  isMe,
+} from '../../util/whatTypeOfConversation.dom.ts';
+import { SignalService as Proto } from '../../protobuf/index.std.ts';
+import {
+  handleMultipleSendErrors,
+  maybeExpandErrors,
+} from './handleMultipleSendErrors.std.ts';
+import { wrapWithSyncMessageSend } from '../../util/wrapWithSyncMessageSend.preload.ts';
+import { ourProfileKeyService } from '../../services/ourProfileKey.std.ts';
+
+import type { ConversationModel } from '../../models/conversations.preload.ts';
+import type {
+  ExpirationTimerUpdateJobData,
+  ConversationQueueJobBundle,
+} from '../conversationJobQueue.preload.ts';
+import { handleMessageSend } from '../../util/handleMessageSend.preload.ts';
+import { DurationInSeconds } from '../../util/durations/index.std.ts';
+import { shouldSendToDirectConversation } from './shouldSendToConversation.preload.ts';
+
+export async function sendDirectExpirationTimerUpdate(
+  conversation: ConversationModel,
+  {
+    isFinalAttempt,
+    messaging,
+    shouldContinue,
+    timeRemaining,
+    timestamp,
+    log,
+  }: ConversationQueueJobBundle,
+  data: ExpirationTimerUpdateJobData
+): Promise<void> {
+  if (!shouldContinue) {
+    log.info('Ran out of time. Giving up on sending expiration timer update');
+    return;
+  }
+
+  if (!isDirectConversation(conversation.attributes)) {
+    log.error(
+      `Conversation ${conversation.idForLogging()} is not a 1:1 conversation; canceling expiration timer job.`
+    );
+    return;
+  }
+
+  if (conversation.isUntrusted()) {
+    const serviceId = conversation.getCheckedServiceId(
+      'Expiration timer send blocked: untrusted and missing serviceId!'
+    );
+    window.reduxActions.conversations.conversationStoppedByMissingVerification({
+      conversationId: conversation.id,
+      untrustedServiceIds: [serviceId],
+    });
+    throw new Error(
+      'Expiration timer send blocked because conversation is untrusted. Failing this attempt.'
+    );
+  }
+
+  log.info(
+    `Starting expiration timer update for ${conversation.idForLogging()} with timestamp ${timestamp}`
+  );
+
+  await conversation.queueJob('sendDirectExpirationTimerUpdate', async () => {
+    const { expireTimer } = data;
+
+    const sendOptions = await getSendOptions(conversation.attributes);
+    let profileKey: Uint8Array<ArrayBuffer> | undefined;
+    if (conversation.get('profileSharing')) {
+      profileKey = await ourProfileKeyService.get();
+    }
+
+    const contentHint = ContentHint.Resendable;
+
+    const sendType = 'expirationTimerUpdate';
+    const flags = Proto.DataMessage.Flags.EXPIRATION_TIMER_UPDATE;
+    const proto = await messaging.getContentMessage({
+      // `expireTimer` is already in seconds
+      expireTimer:
+        expireTimer === undefined
+          ? undefined
+          : DurationInSeconds.fromSeconds(expireTimer),
+      expireTimerVersion: conversation.getExpireTimerVersion(),
+      flags,
+      profileKey,
+      recipients: conversation.getRecipients(),
+      timestamp,
+      includePniSignatureMessage: true,
+    });
+
+    if (!proto.content?.dataMessage) {
+      log.error(
+        "ContentMessage proto didn't have a data message; canceling job."
+      );
+      return;
+    }
+
+    const logId = `expirationTimerUdate/${conversation.idForLogging()}`;
+
+    try {
+      if (isMe(conversation.attributes)) {
+        if (!window.ConversationController.doWeHaveOtherDevices()) {
+          log.info(`${logId}: We have no other devices; not sending sync`);
+          return;
+        }
+
+        await handleMessageSend(
+          messaging.sendSyncMessage({
+            encodedDataMessage: Proto.DataMessage.encode(
+              proto.content.dataMessage
+            ),
+            destinationE164: conversation.get('e164'),
+            destinationServiceId: conversation.getServiceId(),
+            expirationStartTimestamp: null,
+            options: sendOptions,
+            timestamp,
+            urgent: false,
+          }),
+          { messageIds: [], sendType }
+        );
+      } else if (isDirectConversation(conversation.attributes)) {
+        const [ok, refusal] = shouldSendToDirectConversation(conversation);
+        if (!ok) {
+          log.info(refusal.logLine);
+          return;
+        }
+
+        await wrapWithSyncMessageSend({
+          conversation,
+          logId,
+          messageIds: [],
+          send: async sender =>
+            sender.sendIndividualProto({
+              contentHint,
+              serviceId: conversation.getSendTarget(),
+              options: sendOptions,
+              proto,
+              timestamp,
+              urgent: false,
+            }),
+          sendType,
+          timestamp,
+          expirationStartTimestamp: null,
+        });
+      }
+    } catch (error: unknown) {
+      await handleMultipleSendErrors({
+        errors: maybeExpandErrors(error),
+        isFinalAttempt,
+        log,
+        timeRemaining,
+        toThrow: error,
+      });
+    }
+  });
+}

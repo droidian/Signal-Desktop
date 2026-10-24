@@ -1,38 +1,35 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
+
 @mixin system-message-icon($url) {
-  @include light-theme {
+  @include mixins.light-theme {
     -webkit-mask: url($url) no-repeat center;
     -webkit-mask-size: 100%;
   }
-  @include dark-theme {
+  @include mixins.dark-theme {
     -webkit-mask: url($url) no-repeat center;
     -webkit-mask-size: 100%;
   }
 }
 
 .SystemMessage {
-  @include font-body-2;
+  @include mixins.font-body-2;
   align-items: center;
   display: flex;
   flex-direction: column;
   justify-content: center;
   line-height: 16px;
-  padding-bottom: 16px;
-  padding-top: 16px;
+  padding-bottom: 10px;
+  padding-top: 10px;
 
-  @include light-theme {
-    color: $color-gray-60;
-  }
-  @include dark-theme {
-    color: $color-gray-25;
-  }
+  color: var(--axo-color-label-secondary);
 
   &__contents {
     max-width: 400px;
     text-align: center;
-    user-select: none;
 
     p {
       display: block;
@@ -50,7 +47,7 @@
       }
     }
 
-    &::before {
+    &--has-icon::before {
       content: '';
       display: inline-block;
       height: 16px;
@@ -58,12 +55,7 @@
       width: 16px;
       vertical-align: text-top;
 
-      @include light-theme {
-        background-color: $color-gray-60;
-      }
-      @include dark-theme {
-        background-color: $color-gray-25;
-      }
+      background-color: var(--axo-color-label-secondary);
     }
 
     &--icon-audio-incoming::before {
@@ -138,6 +130,15 @@
 
     &--icon-group-summary::before {
       @include system-message-icon('../images/icons/v3/info/info-compact.svg');
+    }
+
+    &--icon-group-terminate::before {
+      @include system-message-icon(
+        '../images/icons/v3/group/group-x-inline.svg'
+      );
+      & {
+        width: 24px;
+      }
     }
 
     &--icon-info::before {
@@ -263,34 +264,22 @@
 
   &--error {
     .SystemMessage__contents::before {
-      @include light-theme {
-        background-color: $color-accent-red;
-      }
-      @include dark-theme {
-        background-color: $color-accent-red;
-      }
+      background: var(--axo-color-label-destructive);
     }
   }
 
   &--danger {
-    @include light-theme {
-      color: $color-accent-red;
-    }
-    @include dark-theme {
-      color: $color-accent-red;
-    }
-
+    color: var(--axo-color-label-destructive);
     .SystemMessage__contents::before {
-      @include light-theme {
-        background-color: $color-accent-red;
-      }
-      @include dark-theme {
-        background-color: $color-accent-red;
-      }
+      background: var(--axo-color-label-destructive);
     }
   }
 
   &__button-container {
     margin-top: 12px;
+  }
+
+  .module-expire-timer {
+    vertical-align: middle;
   }
 }

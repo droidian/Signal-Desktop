@@ -1,0 +1,15 @@
+{
+  "allOf": [
+    {
+      "$ref": "https://json.schemastore.org/package.json"
+    },
+    {
+      "type": "object",
+      "properties": {
+        "build": {
+          "$ref": "https://raw.githubusercontent.com/electron-userland/electron-builder/refs/heads/master/packages/app-builder-lib/scheme.json"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+// Copyright 2025 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+@use '../../variables';
+
+$Fun__BgColor: var(--axo-color-material-dialog);
+$Fun__BgFilter: blur(12px);
+
+$Fun__DialogHeight: 524px;
+$Fun__DialogWidth: 352px;
+
+$Fun__TabsListHeight: 48px;
+$Fun__PanelHeight: $Fun__DialogHeight - $Fun__TabsListHeight;
+$Fun__PanelWidth: $Fun__DialogWidth;

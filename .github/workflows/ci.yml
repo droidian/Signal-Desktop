@@ -1,6 +1,7 @@
 # Copyright 2020 Signal Messenger, LLC
 # SPDX-License-Identifier: AGPL-3.0-only
 
+
 name: CI
 on:
   push:
@@ -10,391 +11,669 @@ on:
       - '[0-9]+.[0-9]+.x'
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
-  lint:
-    runs-on: ubuntu-latest-8-cores
-    timeout-minutes: 30
-
+  dependencies:
+    name: Dependencies
+    runs-on: ubuntu-22.04-8-cores
+    timeout-minutes: 5
     steps:
-    - run: lsb_release -a
-    - run: uname -a
-    - uses: actions/checkout@v4
-    - name: Setup node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version-file: '.nvmrc'
-    - run: npm install -g npm@10.2.5
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          filter: blob:none
 
-    - name: Restore cached .eslintcache and tsconfig.tsbuildinfo
-      uses: actions/cache/restore@v4
-      id: cache-lint
-      with:
-        path: |
-          .eslintcache
-          tsconfig.tsbuildinfo
-        key: lint-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'patches/**', '.eslintrc.js', '.eslint/**', 'tsconfig.json') }}
+      - name: Setup environment
+        uses: ./.github/actions/setup
 
-    - name: Cache Desktop node_modules
-      id: cache-desktop-modules
-      uses: actions/cache@v4
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'patches/**') }}
+      - name: Run pnpmfile tests
+        background: true
+        run: node --test .pnpmfile.mjs
 
-    - name: Install Desktop node_modules
-      if: steps.cache-desktop-modules.outputs.cache-hit != 'true'
-      run: npm ci
-      env:
-        NPM_CONFIG_LOGLEVEL: verbose
+      - name: Audit dependencies
+        background: true
+        run: pnpm audit --audit-level=high
 
-    - run: npm run generate
-    - run: npm run lint
-    - run: npm run lint-deps
-    - run: npm run lint-license-comments
+      - name: Audit dependency signatures
+        background: true
+        run: pnpm audit signatures
 
-    - name: Check acknowledgments file is up to date
-      run: npm run build:acknowledgments
-      env:
-        REQUIRE_SIGNAL_LIB_FILES: 1
+      - name: Check for duplicate dependencies
+        background: true
+        run: pnpm dedupe --check
 
-    - run: git diff --exit-code
+  lint:
+    name: Lint
+    runs-on: ubuntu-22.04-8-cores
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          filter: blob:none
 
-    - name: Update cached .eslintcache and tsconfig.tsbuildinfo
-      uses: actions/cache/save@v4
-      if: github.ref == 'refs/heads/main'
-      with:
-        path: |
-          .eslintcache
-          tsconfig.tsbuildinfo
-        key: ${{ steps.cache-lint.outputs.cache-primary-key }}
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          apt-packages: libpulse0
+
+      - id: generate
+        name: Run generate
+        background: true
+        run: pnpm run generate
+
+      - name: Check license comments
+        background: true
+        run: pnpm run lint-license-comments
+
+      - name: Check prettier
+        background: true
+        run: pnpm run lint-prettier --cache-location=~/.cache/prettier
+
+      - name: Lint styles
+        background: true
+        run: pnpm run lint-css
+
+      - name: Lint deps
+        background: true
+        run: pnpm run lint-deps
+
+      - name: Lint intl
+        background: true
+        run: pnpm run lint-intl
+
+      - name: Check Knip (All)
+        background: true
+        run: pnpm run lint-knip:all --reporter github-actions
+
+      - name: Check Knip (Prod)
+        background: true
+        run: pnpm run lint-knip:prod --reporter github-actions
+
+      - name: Check acknowledgments
+        background: true
+        run: |
+          pnpm run build:acknowledgments
+          git diff --exit-code
+        env:
+          REQUIRE_SIGNAL_LIB_FILES: 1
+
+      # wait for only `generate` instead of having two separate parallel groups so
+      # these additional steps can run as soon as generate is done instead of
+      # waiting for all of the tasks of the previous `parallel` group
+      - name: Wait for generate
+        wait: generate
+
+      - name: Check database schema
+        background: true
+        run: pnpm run build:db-schema --check
+
+      - name: Check TypeScript
+        background: true
+        run: pnpm run check:types
+
+      - name: Check Oxlint
+        background: true
+        run: pnpm run oxlint:ci
+
+      - name: Check unused icons
+        background: true
+        run: pnpm run check:unused-icons
 
   macos:
-    needs: lint
-    runs-on: macos-latest
+    name: MacOS
+    runs-on: macos-26
     if: github.ref == 'refs/heads/main'
-    timeout-minutes: 30
+    timeout-minutes: 15
 
     steps:
-    - run: uname -a
-    - uses: actions/checkout@v4
-    - name: Setup node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version-file: '.nvmrc'
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          filter: blob:none
 
-    - run: npm install -g npm@10.2.5
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          cache-electron-builder: true
 
-    - name: Cache Desktop node_modules
-      id: cache-desktop-modules
-      uses: actions/cache@v4
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'patches/**') }}
+      - name: Prepare beta build
+        run: pnpm run prepare-beta-build
 
-    - name: Install Desktop node_modules
-      if: steps.cache-desktop-modules.outputs.cache-hit != 'true'
-      run: npm ci
-      env:
-        NPM_CONFIG_LOGLEVEL: verbose
+      - name: Run generate
+        run: pnpm run generate
 
-    - run: npm run generate
-    - run: npm run prepare-beta-build
-    - run: npm run test-node
-    - run: npm run test-electron
-      env:
-        ARTIFACTS_DIR: artifacts/macos
-      timeout-minutes: 5
-    - run: touch noop.sh && chmod +x noop.sh
-    - run: npm run build
-      env:
-        DISABLE_INSPECT_FUSE: on
-        SIGN_MACOS_SCRIPT: noop.sh
-        ARTIFACTS_DIR: artifacts/macos
-    - name: Upload installer size
-      if: ${{ github.repository == 'signalapp/Signal-Desktop-Private' && github.ref == 'refs/heads/main' }}
-      run: |
-        node ts/scripts/dd-installer-size.js macos-arm64
-        node ts/scripts/dd-installer-size.js macos-x64
-        node ts/scripts/dd-installer-size.js macos-universal
-      env:
-        DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
-    - name: Rebuild native modules for x64
-      run: npm run electron:install-app-deps
-    - run: npm run test-release
-      env:
-        NODE_ENV: production
-    - run: npm run test-eslint
+      - name: Run node tests
+        run: pnpm run test-node
 
-    - name: Upload artifacts on failure
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        path: artifacts
+      - name: Run electron tests
+        run: pnpm run test-electron
+        env:
+          ARTIFACTS_DIR: artifacts/macos
+          WORKER_COUNT: 4
+        timeout-minutes: 5
+
+      - name: Build release
+        run: |
+          touch noop.sh
+          chmod +x noop.sh
+          pnpm run build:release
+        env:
+          DISABLE_INSPECT_FUSE: on
+          SIGN_MACOS_SCRIPT: noop.sh
+          ARTIFACTS_DIR: artifacts/macos
+
+      - name: Upload installer size
+        if: ${{ github.repository == 'signalapp/Signal-Desktop-Private' && github.ref == 'refs/heads/main' }}
+        run: |
+          node scripts/publish-installer-size.mjs macos-arm64
+          node scripts/publish-installer-size.mjs macos-x64
+          node scripts/publish-installer-size.mjs macos-universal
+
+      - name: Run release tests
+        run: pnpm run test-release
+        env:
+          NODE_ENV: production
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: artifacts
 
   linux:
-    needs: lint
-    runs-on: ubuntu-latest-8-cores
-    timeout-minutes: 30
-
+    name: Linux
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04-8-cores
+            arch: x64
+          - os: ubuntu-22.04-arm64-4-cores
+            arch: arm64
     steps:
-    - run: lsb_release -a
-    - run: uname -a
-    - uses: actions/checkout@v4
-    - name: Setup node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version-file: '.nvmrc'
-    - run: sudo apt-get install xvfb
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-    - run: npm install -g npm@10.2.5
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          apt-packages: xvfb libpulse0
+          cache-electron-builder: true
 
-    - name: Cache Desktop node_modules
-      id: cache-desktop-modules
-      uses: actions/cache@v4
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'patches/**') }}
+      - name: Prepare beta builde
+        run: pnpm run prepare-beta-build
 
-    - name: Install Desktop node_modules
-      if: steps.cache-desktop-modules.outputs.cache-hit != 'true'
-      run: npm ci
-      env:
-        NPM_CONFIG_LOGLEVEL: verbose
+      - name: Run generate
+        run: pnpm run generate
 
-    - run: npm run generate
-    - run: npm run prepare-beta-build
+      - name: Run node tests
+        run: xvfb-run --auto-servernum pnpm run test-node
 
-    - name: Create bundle
-      run: npm run build:esbuild:prod
-    - name: Create preload cache
-      run: xvfb-run --auto-servernum npm run build:preload-cache
-      env:
-        ARTIFACTS_DIR: artifacts/linux
+      - name: Create preload cache
+        run: xvfb-run --auto-servernum pnpm run build:preload-cache
+        env:
+          ARTIFACTS_DIR: artifacts/linux
 
-    - name: Build with packaging .deb file
-      run: npm run build:release -- --publish=never
-      if: github.ref == 'refs/heads/main'
-      env:
-        DISABLE_INSPECT_FUSE: on
-    - name: Build without packaging .deb file
-      run: npm run build:release -- --linux dir
-      if: github.ref != 'refs/heads/main'
-      env:
-        DISABLE_INSPECT_FUSE: on
+      - name: Set Linux build target architecture
+        run: pnpm run prepare-linux-build deb ${{ matrix.arch }}
 
-    - name: Upload installer size
-      if: ${{ github.repository == 'signalapp/Signal-Desktop-Private' && github.ref == 'refs/heads/main' }}
-      run: node ts/scripts/dd-installer-size.js linux
-      env:
-        DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+      - name: Build with packaging .deb file
+        run: pnpm run build:release --publish=never
+        if: github.ref == 'refs/heads/main'
+        env:
+          CC: sccache gcc
+          CXX: sccache g++
+          SCCACHE_GHA_ENABLED: true
+          DISABLE_INSPECT_FUSE: on
 
-    - run: xvfb-run --auto-servernum npm run test-node
+      - name: Build without packaging .deb file
+        run: pnpm run build:release --linux dir
+        if: github.ref != 'refs/heads/main'
+        env:
+          CC: sccache gcc
+          CXX: sccache g++
+          SCCACHE_GHA_ENABLED: true
+          DISABLE_INSPECT_FUSE: on
 
-    - name: Clone backup integration tests
-      uses: actions/checkout@v4
-      with:
-        repository: 'signalapp/Signal-Message-Backup-Tests'
-        ref: '996daf691d4162ce854845dc883c62adb1a3fe55'
-        path: 'backup-integration-tests'
+      - name: Upload installer size
+        if: ${{ github.repository == 'signalapp/Signal-Desktop-Private' && github.ref == 'refs/heads/main' }}
+        run: node scripts/publish-installer-size.mjs linux-${{ matrix.arch }}
 
-    - run: xvfb-run --auto-servernum npm run test-electron
-      timeout-minutes: 5
-      env:
-        ARTIFACTS_DIR: artifacts/linux
-        LANG: en_US
-        LANGUAGE: en_US
-        BACKUP_INTEGRATION_DIR: 'backup-integration-tests/test-cases'
-    - run: xvfb-run --auto-servernum npm run test-release
-      env:
-        NODE_ENV: production
+      - name: Clone backup integration tests
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: 'signalapp/Signal-Message-Backup-Tests'
+          ref: 'a0f900243210efbedc72f0907c5d2f140385daa4'
+          path: 'backup-integration-tests'
 
-    - name: Upload artifacts on failure
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        path: artifacts
+      - name: Run electron tests
+        run: xvfb-run --auto-servernum pnpm run test-electron
+        timeout-minutes: 5
+        env:
+          ARTIFACTS_DIR: artifacts/linux
+          LANG: en_US
+          LANGUAGE: en_US
+          BACKUP_INTEGRATION_DIR: 'backup-integration-tests/test-cases'
+          WORKER_COUNT: 8
+
+      - name: Run release tests
+        run: xvfb-run --auto-servernum pnpm run test-release
+        env:
+          NODE_ENV: production
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: artifacts
 
   windows:
-    needs: lint
-    runs-on: windows-2019
-    timeout-minutes: 30
-
-    env:
-      BUILD_LOCATION: "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Enterprise\\VC\\Tools\\MSVC\\14.29.30133\\lib\\x86\\store\\references\\"
-      SDK_LOCATION: "C:\\Program Files (x86)\\Windows Kits\\10\\UnionMetadata\\10.0.17134.0"
-
+    name: Windows
+    runs-on: windows-latest-8-cores
+    timeout-minutes: 15
     steps:
-    - run: systeminfo
-    - run: git config --global core.autocrlf false
-    - run: git config --global core.eol lf
-    - uses: actions/checkout@v4
-    - name: Setup node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version-file: '.nvmrc'
-    - run: npm install -g npm@10.2.5 node-gyp@10.0.1
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-    # Set things up so @nodert-win10-rs4 dependencies build properly
-    - run: dir "$env:BUILD_LOCATION"
-    - run: dir "$env:SDK_LOCATION"
-    - run: "copy \"$env:BUILD_LOCATION\\platform.winmd\" \"$env:SDK_LOCATION\""
-    - run: dir "$env:SDK_LOCATION"
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          cache-electron-builder: true
 
-    - name: Cache Desktop node_modules
-      id: cache-desktop-modules
-      uses: actions/cache@v4
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'patches/**') }}
+      - name: Remove certificate fields from package.json
+        run: |
+          copy package.json temp.json
+          del package.json
+          type temp.json | findstr /v certificateSubjectName | findstr /v certificateSha1 > package.json
 
-    - name: Install Desktop node_modules
-      if: steps.cache-desktop-modules.outputs.cache-hit != 'true'
-      run: npm ci
-      env:
-        CHILD_CONCURRENCY: 1
-        NPM_CONFIG_LOGLEVEL: verbose
+      - name: Prepare beta build
+        run: pnpm run prepare-beta-build
 
-    - run: npm run generate
-    - run: npm run test-node
-    - run: copy package.json temp.json
-    - run: del package.json
-    - run: type temp.json | findstr /v certificateSubjectName | findstr /v certificateSha1 > package.json
-    - run: npm run prepare-beta-build
+      - name: Run generate
+        run: pnpm run generate
 
-    - name: Create bundle
-      run: npm run build:esbuild:prod
-    - name: Create preload cache
-      run: npm run build:preload-cache
-      env:
-        ARTIFACTS_DIR: artifacts/win
+      - name: Run node tests
+        run: pnpm run test-node
 
-    - name: Build with NSIS
-      run: npm run build:release
-      if: github.ref == 'refs/heads/main'
-      env:
-        DISABLE_INSPECT_FUSE: on
-    - name: Build without NSIS
-      run: npm run build:release -- --win dir
-      if: github.ref != 'refs/heads/main'
-      env:
-        DISABLE_INSPECT_FUSE: on
+      - name: Create preload cache
+        run: pnpm run build:preload-cache
+        env:
+          ARTIFACTS_DIR: artifacts/win
 
-    - name: Upload installer size
-      if: ${{ github.repository == 'signalapp/Signal-Desktop-Private' && github.ref == 'refs/heads/main' }}
-      run: node ts/scripts/dd-installer-size.js windows
-      env:
-        DD_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+      - name: Build with NSIS
+        run: pnpm run build:release --publish=never
+        if: github.ref == 'refs/heads/main'
+        env:
+          DISABLE_INSPECT_FUSE: on
 
-    - run: npm run test-electron
-      env:
-        ARTIFACTS_DIR: artifacts/windows
-      timeout-minutes: 5
-    - run: npm run test-release
-      env:
-        SIGNAL_ENV: production
+      - name: Build without NSIS
+        run: pnpm run build:release --win dir
+        if: github.ref != 'refs/heads/main'
+        env:
+          DISABLE_INSPECT_FUSE: on
 
-    - name: Upload artifacts on failure
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        path: artifacts
+      - name: Upload installer size
+        if: ${{ github.repository == 'signalapp/Signal-Desktop-Private' && github.ref == 'refs/heads/main' }}
+        run: node scripts/publish-installer-size.mjs windows
+
+      - name: Run electron tests
+        run: pnpm run test-electron
+        env:
+          ARTIFACTS_DIR: artifacts/windows
+          WORKER_COUNT: 4
+          # Windows runner is very slow when writing to disk
+          TEST_ELECTRON_TIMEOUT: 20000
+        timeout-minutes: 5
+
+      - name: Run release tests
+        run: pnpm run test-release
+        env:
+          SIGNAL_ENV: production
+
+      - name: Upload artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: artifacts
 
   sticker-creator:
     name: Sticker Creator
-    runs-on: ubuntu-latest-8-cores
-    timeout-minutes: 30
+    runs-on: ubuntu-22.04-8-cores
+    timeout-minutes: 5
 
     defaults:
       run:
         working-directory: sticker-creator
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version-file: '.nvmrc'
-        cache: 'npm'
-        cache-dependency-path: 'package-lock.json'
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-    - name: Install Sticker Creator node_modules
-      run: npm ci
+      - name: Setup environment
+        uses: ./.github/actions/setup
 
-    - name: Build Sticker Creator
-      run: npm run build
+      - name: Check build
+        background: true
+        run: pnpm run build
 
-    - name: Check Sticker Creator types
-      run: npm run check:types
+      - name: Check types
+        background: true
+        run: pnpm run check:types
 
-    - name: Check Sticker Creator formatting
-      run: npm run prettier:check
+      - name: Check formatting
+        background: true
+        run: pnpm run prettier:check
 
-    - name: Check Sticker Creator linting
-      run: npm run lint
-
-    - name: Run tests
-      run: npm test -- --run
+      - name: Check lint
+        background: true
+        run: pnpm run lint
 
   mock-tests:
-    needs: lint
-    runs-on: ubuntu-latest-8-cores
+    name: Mock Tests ${{ matrix.withoutE164.name }} ${{ matrix.workerIndex.name }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        withoutE164:
+          - name: "(with e164)"
+            value: false
+          - name: "(without e164)"
+            value: true
+        workerIndex:
+          - name: '[1/4]'
+            value: 0
+          - name: '[2/4]'
+            value: 1
+          - name: '[3/4]'
+            value: 2
+          - name: '[4/4]'
+            value: 3
+
+    runs-on: ubuntu-latest-16-cores
     if: ${{ github.repository == 'signalapp/Signal-Desktop-Private' }}
-    timeout-minutes: 30
+    timeout-minutes: 15
 
     steps:
-    - name: Get system specs
-      run: lsb_release -a
-    - name: Get other system specs
-      run: uname -a
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-    - name: Clone Desktop repo
-      uses: actions/checkout@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          apt-packages: xvfb libpulse0
+          install-electron: true
 
-    - name: Setup node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version-file: '.nvmrc'
-    - name: Install global dependencies
-      run: npm install -g npm@10.2.5
+      - name: Run generate
+        run: pnpm run generate
 
-    - name: Install xvfb
-      run: sudo apt-get install xvfb
+      - name: Create preload cache
+        run: xvfb-run --auto-servernum pnpm run build:preload-cache
+        env:
+          ARTIFACTS_DIR: artifacts/linux
 
-    - name: Cache Desktop node_modules
-      id: cache-desktop-modules
-      uses: actions/cache@v4
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'patches/**') }}
+      - name: Run mock server tests
+        run: |
+          set -o pipefail
+          xvfb-run --auto-servernum pnpm run test-mock
+        timeout-minutes: 15
+        env:
+          NODE_ENV: production
+          DEBUG: mock:test:*
+          ARTIFACTS_DIR: artifacts/mock
+          WORKER_INDEX: ${{ matrix.workerIndex.value }}
+          WORKER_COUNT: 4
+          MOCK_WITHOUT_E164: ${{ case(matrix.withoutE164.value, 'on', '') }}
 
-    - name: Install Desktop node_modules
-      if: steps.cache-desktop-modules.outputs.cache-hit != 'true'
-      run: npm ci
-      env:
-        NPM_CONFIG_LOGLEVEL: verbose
+      - name: Run docker mock server tests
+        if: ${{ matrix.workerIndex.value == 0 }}
+        run: |
+          set -o pipefail
+          sudo apt-get update
+          sudo apt-get install -y pipewire pipewire-pulse wireplumber psmisc pulseaudio-utils
+          systemctl --user start pipewire.service
+          systemctl --user start pipewire-pulse.service
+          xvfb-run --auto-servernum pnpm run test-mock-docker
+        timeout-minutes: 10
+        env:
+          NODE_ENV: production
+          DEBUG: mock:test:*
+          ARTIFACTS_DIR: artifacts/mock-docker
 
-    - name: Build typescript
-      run: npm run generate
-    - name: Bundle
-      run: npm run build:esbuild:prod
-    - name: Create preload cache
-      run: xvfb-run --auto-servernum npm run build:preload-cache
-      env:
-        ARTIFACTS_DIR: artifacts/linux
+      - name: Upload mock server test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: logs-${{ matrix.workerIndex.value }}
+          path: artifacts
 
-    - name: Run mock server tests
-      run: |
-        set -o pipefail
-        xvfb-run --auto-servernum npm run test-mock
-      timeout-minutes: 10
-      env:
-        NODE_ENV: production
-        DEBUG: mock:test:*
-        ARTIFACTS_DIR: artifacts/startup
+  check-min-os-version:
+    name: Check Min OS Version
 
-    - name: Upload mock server test logs on failure
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: logs
-        path: artifacts
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-22.04-8-cores
+          - macos-26
+          - windows-latest-8-cores
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          filter: blob:none
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+
+      - name: Run OS version check
+        run: |
+          node scripts/check-min-os-version.mjs
+
+  danger:
+    name: Danger
+    runs-on: ubuntu-latest-8-cores
+    timeout-minutes: 5
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          filter: blob:none
+
+      - name: Setup danger environment
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        with:
+          cache: true
+          package-json-file: danger/package.json
+          cache-dependency-path: danger/pnpm-lock.yaml
+          install: false # skip install to focus on just danger/ package and to run `pnpm install --frozen-lockfile`
+
+      - name: Install danger dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: danger
+
+      - name: Run danger checks
+        run: pnpm run danger:ci
+        working-directory: danger
+        env:
+          DANGER_GITHUB_API_TOKEN: ${{ secrets.AUTOMATED_GITHUB_PAT }}
+
+  storybook:
+    name: Storybook
+    runs-on: ubuntu-latest-16-cores
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          install-playwright: true
+
+      - name: Build storybook
+        run: pnpm run build:storybook
+
+      - id: storybook-server
+        name: Serve storybook
+        background: true
+        run: pnpm run test:storybook:serve
+
+      - name: Run storybook tests
+        run: pnpm run test:storybook:test
+
+      - name: Stop storybook server
+        cancel: storybook-server
+
+  benchmark:
+    name: Benchmark
+    strategy:
+      matrix:
+        metric:
+          - startup
+          - send
+          - groupSend
+          - largeGroupSendWithBlocks
+          - largeGroupSend
+          - convoOpen
+          - callHistorySearch
+          - backup
+        include:
+          - metric: startup
+            script: ts/test-mock/benchmarks/startup_bench.node.js
+            runCount: 10
+          - metric: send
+            script: ts/test-mock/benchmarks/send_bench.node.js
+            runCount: 100
+          - metric: groupSend
+            script: ts/test-mock/benchmarks/group_send_bench.node.js
+            runCount: 100
+            conversationSize: 500
+          - metric: largeGroupSendWithBlocks
+            script: ts/test-mock/benchmarks/group_send_bench.node.js
+            runCount: 50
+            conversationSize: 500
+            groupSize: 500
+            contactCount: 500
+            blockedCount: 10
+            discardCount: 2
+          - metric: largeGroupSend
+            script: ts/test-mock/benchmarks/group_send_bench.node.js
+            runCount: 20
+            conversationSize: 50
+            groupSize: 500
+            contactCount: 500
+            discardCount: 2
+          - metric: convoOpen
+            script: ts/test-mock/benchmarks/convo_open_bench.node.js
+            runCount: 100
+          - metric: callHistorySearch
+            script: ts/test-mock/benchmarks/call_history_search_bench.node.js
+            runCount: 100
+          - metric: backup
+            script: ts/test-mock/benchmarks/backup_bench.node.js
+
+    runs-on: ubuntu-22.04-8-cores
+    if: ${{ github.repository == 'signalapp/Signal-Desktop-Private' }}
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          apt-packages: xvfb libpulse0
+
+      - name: Run generate
+        run: pnpm run generate
+
+      - name: Create preload cache
+        run: xvfb-run --auto-servernum pnpm run build:preload-cache
+
+      - name: Set MAX_CYCLES=2 on main
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          echo "MAX_CYCLES=2" >> "$GITHUB_ENV"
+
+      - name: Run ${{ matrix.metric }}
+        run: |
+          set -o pipefail
+          xvfb-run --auto-servernum ./node_modules/.bin/tsx \
+            ${{ matrix.script }} | tee benchmark.log
+        timeout-minutes: 10
+        env:
+          NODE_ENV: production
+          ELECTRON_ENABLE_STACK_DUMPING: on
+          DEBUG: 'mock:benchmarks'
+          ARTIFACTS_DIR: artifacts/${{ matrix.metric }}
+          GROUP_SIZE: ${{ matrix.groupSize }}
+          CONTACT_COUNT: ${{ matrix.contactCount }}
+          BLOCKED_COUNT: ${{ matrix.blockedCount }}
+          DISCARD_COUNT: ${{ matrix.discardCount }}
+          RUN_COUNT: ${{ matrix.runCount }}
+          CONVERSATION_SIZE: ${{ matrix.conversationSize }}
+
+      - name: Upload benchmark logs on failure
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: logs
+          path: artifacts
+
+      - name: Clone benchmark repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: 'signalapp/Signal-Desktop-Benchmarks-Private'
+          path: 'benchmark-results'
+          token: ${{ secrets.AUTOMATED_GITHUB_PAT }}
+
+      - name: Build benchmark repo
+        working-directory: benchmark-results
+        run: |
+          pnpm install
+          pnpm run build
+
+      - name: Publish
+        working-directory: benchmark-results
+        run: |
+          node ./bin/publish.js ../benchmark.log desktop.ci.performance.${{ matrix.metric }}
+        env:
+          OTEL_EXPORTER_OTLP_ENDPOINT: ${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}
+          OTEL_EXPORTER_OTLP_PROTOCOL: ${{ secrets.OTEL_EXPORTER_OTLP_PROTOCOL }}
+          OTEL_EXPORTER_OTLP_HEADERS: ${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}
+
+  auto-merge-ready:
+    if: |
+      always() &&
+      github.event_name == 'pull_request' &&
+      github.repository == 'signalapp/Signal-Desktop-Private'
+    name: Auto Merge Ready
+    needs:
+      - lint
+      - linux
+      - windows
+      - sticker-creator
+      - mock-tests
+      - check-min-os-version
+      - danger
+      - storybook
+      - benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if any jobs failed or were cancelled
+        if: |
+          contains(needs.*.result, 'failure') ||
+          contains(needs.*.result, 'cancelled')
+        run: |
+          echo "One or more upstream jobs failed"
+          exit 1

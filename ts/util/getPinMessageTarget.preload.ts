@@ -1,0 +1,55 @@
+// Copyright 2026 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { SentTimestampMs } from '@signalapp/types';
+import { createLogger } from '../logging/log.std.ts';
+import { isIncoming } from '../messages/helpers.std.ts';
+import type { ReadonlyMessageAttributesType } from '../model-types.d.ts';
+import { DataReader } from '../sql/Client.preload.ts';
+import { itemStorage } from '../textsecure/Storage.preload.ts';
+import type { AciString } from '../types/ServiceId.std.ts';
+import { strictAssert } from './assert.std.ts';
+import { getMessageSentTimestamp } from './getMessageSentTimestamp.std.ts';
+import { isAciString } from './isAciString.std.ts';
+
+const log = createLogger('getPinMessageTarget');
+
+export type PinnedMessageTarget = Readonly<{
+  conversationId: string;
+  targetMessageId: string;
+  targetAuthorAci: AciString;
+  targetSentTimestamp: SentTimestampMs;
+}>;
+
+function getMessageAuthorAci(
+  message: ReadonlyMessageAttributesType
+): AciString {
+  if (isIncoming(message)) {
+    strictAssert(
+      isAciString(message.sourceServiceId),
+      'Message sourceServiceId must be an ACI'
+    );
+    return message.sourceServiceId;
+  }
+  return itemStorage.user.getCheckedAci();
+}
+
+export async function getPinnedMessageTarget(
+  targetMessageId: string
+): Promise<PinnedMessageTarget | null> {
+  const message = await DataReader.getMessageById(targetMessageId);
+  if (message == null) {
+    return null;
+  }
+  return {
+    conversationId: message.conversationId,
+    targetMessageId: message.id,
+    targetAuthorAci: getMessageAuthorAci(message),
+    targetSentTimestamp: SentTimestampMs.fromNumber(
+      getMessageSentTimestamp(message, {
+        includeEdits: true,
+        log,
+      })
+    ),
+  };
+}

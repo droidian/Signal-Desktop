@@ -1,0 +1,8 @@
+@import 'tailwindcss' source(none);
+@import '../ts/axo/_tailwind.css';
+
+@source '../ts';
+@source '../test';
+@source '../.storybook';
+@source '../*.{html,js}';
+@source '../stylesheets/**/*.scss';

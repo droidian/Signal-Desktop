@@ -1,0 +1,474 @@
+// Copyright 2026 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { useEffect, useRef, useState, useCallback, type JSX } from 'react';
+import { noop } from 'lodash';
+
+import { Input } from '../../Input.dom.tsx';
+import { FunEmojiPicker } from '../../fun/FunEmojiPicker.dom.tsx';
+import { FunEmojiPickerButton } from '../../fun/FunButton.dom.tsx';
+import { tw } from '../../../axo/tw.dom.tsx';
+import { AxoButton } from '../../../axo/AxoButton.dom.tsx';
+import {
+  STRING_BYTE_LIMIT,
+  STRING_GRAPHEME_LIMIT,
+} from '../../../types/GroupMemberLabels.std.ts';
+import {
+  Message,
+  MessageInteractivity,
+  TextDirection,
+} from '../Message.dom.tsx';
+import type { ContactNameColorType } from '../../../types/Colors.std.ts';
+import { ConversationColors } from '../../../types/Colors.std.ts';
+import { WidthBreakpoint } from '../../_util.std.ts';
+import { AxoAlertDialog } from '../../../axo/AxoAlertDialog.dom.tsx';
+import { Avatar, AvatarSize } from '../../Avatar.dom.tsx';
+import { UserText } from '../../UserText.dom.tsx';
+import { GroupMemberLabel } from '../ContactName.dom.tsx';
+import { useConfirmDiscard } from '../../../hooks/useConfirmDiscard.dom.tsx';
+import { NavTab } from '../../../types/Nav.std.ts';
+import { PanelType } from '../../../types/Panels.std.ts';
+import type {
+  ConversationType,
+  UpdateGroupMemberLabelType,
+} from '../../../state/ducks/conversations.preload.ts';
+import type { LocalizerType, ThemeType } from '../../../types/Util.std.ts';
+import type { PreferredBadgeSelectorType } from '../../../state/selectors/badges.preload.ts';
+import type { Location } from '../../../types/Nav.std.ts';
+import { usePreviousDeprecated } from '../../../hooks/usePrevious.std.ts';
+import type { Emoji } from '../../../axo/emoji.std.ts';
+import { AxoList } from '../../../axo/items/AxoList.dom.tsx';
+import { AxoItem } from '../../../axo/items/AxoItem.dom.tsx';
+
+export type PropsDataType = {
+  canAddLabel: boolean;
+  existingLabelEmoji: Emoji.Variant | undefined;
+  existingLabelString: string | undefined;
+  group: ConversationType;
+  i18n: LocalizerType;
+  isActive: boolean;
+  me: ConversationType;
+  membersWithLabel: Array<{
+    contactNameColor: ContactNameColorType;
+    isAdmin: boolean;
+    labelEmoji: Emoji.Variant | undefined;
+    labelString: string;
+    member: ConversationType;
+  }>;
+  ourColor: ContactNameColorType | undefined;
+  theme: ThemeType;
+};
+
+export type PropsType = PropsDataType & {
+  getPreferredBadge: PreferredBadgeSelectorType;
+  popPanelForConversation: () => void;
+  updateGroupMemberLabel: UpdateGroupMemberLabelType;
+};
+
+// We don't want to render any panel behind it as we animate it in, if we weren't already
+// showing the ConversationDetails pane.
+export function getLeafPanelOnly(
+  location: Location,
+  conversationId: string | undefined
+): boolean {
+  return (
+    !conversationId ||
+    location.tab !== NavTab.Chats ||
+    location.details.conversationId !== conversationId ||
+    location.details.panels?.watermark === -1 ||
+    location.details.panels?.stack[0]?.type !== PanelType.ConversationDetails
+  );
+}
+
+export function GroupMemberLabelEditor({
+  canAddLabel,
+  group,
+  me,
+  existingLabelEmoji,
+  existingLabelString,
+  getPreferredBadge,
+  i18n,
+  isActive,
+  membersWithLabel,
+  ourColor,
+  popPanelForConversation,
+  theme,
+  updateGroupMemberLabel,
+}: PropsType): JSX.Element {
+  const [isShowingGeneralError, setIsShowingGeneralError] = useState(false);
+  const [isShowingPermissionsError, setIsShowingPermissionsError] =
+    useState(false);
+
+  const messageContainer = useRef<HTMLDivElement | null>(null);
+
+  const [labelEmoji, setLabelEmoji] = useState(existingLabelEmoji);
+  const [labelString, setLabelString] = useState(existingLabelString);
+
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+
+  const [isSaving, setIsSaving] = useState(false);
+
+  const labelStringForSave = labelString ? labelString.trim() : labelString;
+  const isDirty =
+    (labelEmoji || undefined) !== (existingLabelEmoji || undefined) ||
+    (labelStringForSave || undefined) !== (existingLabelString || undefined);
+  const canSave =
+    isDirty && ((!labelEmoji && !labelStringForSave) || labelStringForSave);
+
+  const contactLabelForMessage = labelStringForSave
+    ? { labelEmoji, labelString: labelStringForSave }
+    : undefined;
+
+  useEffect(() => {
+    if (!canAddLabel && isActive && !isShowingPermissionsError) {
+      // oxlint-disable-next-line react/set-state-in-effect
+      setIsShowingPermissionsError(true);
+    }
+  }, [
+    canAddLabel,
+    isActive,
+    isShowingPermissionsError,
+    setIsShowingPermissionsError,
+  ]);
+
+  const tryClose = useRef<(() => void) | null>(null);
+  const [confirmDiscardModal, confirmDiscardIf] = useConfirmDiscard({
+    i18n,
+    name: 'GroupMemberLabelEditor',
+    tryClose,
+    // @ts-expect-error ConfirmationDialog migration: Needs title
+    title: null,
+    // @ts-expect-error ConfirmationDialog migration: Needs description
+    description: null,
+  });
+
+  const onTryClose = useCallback(() => {
+    const discardChanges = noop;
+    // If leaving the screen because we no longer have permission, no confirm discard
+    confirmDiscardIf(isDirty && canAddLabel, discardChanges);
+  }, [canAddLabel, confirmDiscardIf, isDirty]);
+  // oxlint-disable-next-line react/refs
+  tryClose.current = onTryClose;
+
+  // Popping the panel here after a save is far safer; we may not have re-rendered with
+  // the new existing values yet when the onSuccess callback down-file is called.
+  const previousIsSaving = usePreviousDeprecated(isSaving, isSaving);
+  useEffect(() => {
+    if (!isSaving && previousIsSaving !== isSaving && !isDirty) {
+      popPanelForConversation();
+    }
+  }, [isDirty, isSaving, popPanelForConversation, previousIsSaving]);
+
+  const shouldShowClearButton = Boolean(labelEmoji || labelString);
+
+  return (
+    <div className={tw('flex size-full flex-col')}>
+      <div className={tw('grow flex-col overflow-y-scroll')}>
+        <div className={tw('mx-auto max-w-[680px] px-5')}>
+          <Input
+            autoFocus
+            hasClearButton
+            i18n={i18n}
+            icon={
+              <FunEmojiPicker
+                open={emojiPickerOpen}
+                onOpenChange={(open: boolean) => setEmojiPickerOpen(open)}
+                placement="bottom"
+                onSelectEmoji={data => {
+                  setLabelEmoji(data.emoji);
+                }}
+                closeOnSelect
+                theme={theme}
+              >
+                <FunEmojiPickerButton i18n={i18n} selectedEmoji={labelEmoji} />
+              </FunEmojiPicker>
+            }
+            maxLengthCount={STRING_GRAPHEME_LIMIT}
+            maxByteCount={STRING_BYTE_LIMIT}
+            moduleClassName="GroupMemberLabelEditor"
+            onChange={value => {
+              if (!value) {
+                setLabelEmoji(undefined);
+              }
+
+              // Replace all whitespace with basic space
+              setLabelString(value.replace(/\s/g, ' '));
+            }}
+            placeholder={i18n(
+              'icu:ConversationDetails--member-label--placeholder'
+            )}
+            ref={undefined}
+            shouldShowClearButton={shouldShowClearButton}
+            value={labelString}
+            whenToShowRemainingCount={20}
+          />
+          <div className={tw('mt-2 mb-4 type-body-small text-secondary')}>
+            {i18n('icu:ConversationDetails--member-label--description')}
+          </div>
+
+          <AxoList.Group>
+            <AxoList.Root>
+              <AxoList.Header>
+                <AxoList.Label>
+                  {i18n('icu:ConversationDetails--member-label--preview')}
+                </AxoList.Label>
+              </AxoList.Header>
+              <AxoList.Body ref={messageContainer}>
+                <Message
+                  text={i18n('icu:ConversationDetails--member-label--hello')}
+                  author={{ ...me, isMe: false }}
+                  contactLabel={contactLabelForMessage}
+                  contactNameColor={ourColor}
+                  renderingContext="ConversationDetails/GroupMemberLabelEditor"
+                  theme={theme}
+                  id="fake-id"
+                  conversationColor={
+                    group.conversationColor ?? ConversationColors[0]
+                  }
+                  conversationTitle={group.title}
+                  conversationId={group.id}
+                  textDirection={TextDirection.LeftToRight}
+                  isSelected={false}
+                  isSelectMode={false}
+                  isSignalConversation={false}
+                  isSMS={false}
+                  isTargeted={false}
+                  isTargetedCounter={null}
+                  isTargetedSource={null}
+                  isVoiceMessagePlayed={false}
+                  direction="incoming"
+                  // oxlint-disable-next-line react/purity
+                  timestamp={Date.now()}
+                  conversationType="group"
+                  previews={[]}
+                  isPinned={false}
+                  canDeleteForEveryone={false}
+                  canRetryDeleteForEveryone={false}
+                  canSendPollVote={false}
+                  retryDeleteForEveryone={noop}
+                  isBlocked={false}
+                  isMessageRequestAccepted={false}
+                  containerElementRef={messageContainer}
+                  containerWidthBreakpoint={WidthBreakpoint.Wide}
+                  i18n={i18n}
+                  interactivity={MessageInteractivity.Static}
+                  platform="unused"
+                  shouldCollapseAbove={false}
+                  shouldCollapseBelow={false}
+                  shouldHideMetadata={false}
+                  clearTargetedMessage={noop}
+                  getPreferredBadge={getPreferredBadge}
+                  renderAudioAttachment={() => <div />}
+                  doubleCheckMissingQuoteReference={noop}
+                  messageExpanded={noop}
+                  startConversationWithSharedContact={noop}
+                  showConversation={noop}
+                  openGiftBadge={noop}
+                  pushPanelForConversation={noop}
+                  retryMessageSend={noop}
+                  sendPollVote={noop}
+                  endPoll={noop}
+                  showContactModal={noop}
+                  showSpoiler={noop}
+                  cancelAttachmentDownload={noop}
+                  kickOffAttachmentDownload={noop}
+                  markAttachmentAsCorrupted={noop}
+                  saveAttachment={noop}
+                  saveAttachments={noop}
+                  showLightbox={noop}
+                  showLightboxForViewOnceMedia={noop}
+                  scrollToQuotedMessage={noop}
+                  showAttachmentDownloadStillInProgressToast={noop}
+                  showExpiredIncomingTapToViewToast={noop}
+                  showExpiredOutgoingTapToViewToast={noop}
+                  showMediaNoLongerAvailableToast={noop}
+                  showTapToViewNotAvailableModal={noop}
+                  viewStory={noop}
+                  handleClickCtaButton={noop}
+                  onToggleSelect={noop}
+                  onReplyToMessage={noop}
+                />
+              </AxoList.Body>
+            </AxoList.Root>
+
+            <AxoList.Root>
+              <AxoList.Header>
+                <AxoList.Label>
+                  {i18n('icu:ConversationDetails--member-label--list-header')}
+                </AxoList.Label>
+              </AxoList.Header>
+              <AxoList.Body>
+                {membersWithLabel.length === 0 ? (
+                  <div
+                    className={tw(
+                      'px-3.5 py-2 type-body-medium text-secondary'
+                    )}
+                  >
+                    {i18n('icu:ConversationDetails--member-label--no-members')}
+                  </div>
+                ) : (
+                  <AxoItem.Group>
+                    {membersWithLabel.map(membership => {
+                      const {
+                        contactNameColor,
+                        isAdmin,
+                        labelEmoji: memberLabelEmoji,
+                        labelString: memberLabelString,
+                        member,
+                      } = membership;
+
+                      return (
+                        <AxoItem.Root key={member.serviceId}>
+                          <AxoItem.Leading>
+                            <Avatar
+                              conversationType="direct"
+                              badge={getPreferredBadge(member.badges)}
+                              i18n={i18n}
+                              size={AvatarSize.THIRTY_SIX}
+                              theme={theme}
+                              {...member}
+                            />
+                          </AxoItem.Leading>
+                          <AxoItem.Content>
+                            <AxoItem.Label>
+                              <UserText
+                                text={
+                                  member.isMe ? i18n('icu:you') : member.title
+                                }
+                              />
+                            </AxoItem.Label>
+                            {isAdmin && (
+                              <AxoItem.Value>
+                                {i18n('icu:GroupV2--admin')}
+                              </AxoItem.Value>
+                            )}
+                            {memberLabelString && contactNameColor && (
+                              <AxoItem.Description>
+                                <GroupMemberLabel
+                                  contactNameColor={contactNameColor}
+                                  contactLabel={{
+                                    labelEmoji: memberLabelEmoji,
+                                    labelString: memberLabelString,
+                                  }}
+                                  context="list"
+                                />
+                              </AxoItem.Description>
+                            )}
+                          </AxoItem.Content>
+                        </AxoItem.Root>
+                      );
+                    })}
+                  </AxoItem.Group>
+                )}
+              </AxoList.Body>
+            </AxoList.Root>
+          </AxoList.Group>
+        </div>
+      </div>
+      <div
+        className={tw(
+          'mx-auto flex w-full max-w-[680px] shrink-0 grow-0 justify-end gap-2 px-5 py-3 pe-6.5'
+        )}
+      >
+        <AxoButton.Root
+          variant="strong-secondary"
+          size="md"
+          onClick={() => {
+            popPanelForConversation();
+          }}
+        >
+          {i18n('icu:cancel')}
+        </AxoButton.Root>
+
+        <AxoButton.Root
+          variant="strong-primary"
+          size="md"
+          pending={isSaving}
+          disabled={!canSave}
+          onClick={() => {
+            setIsSaving(true);
+            updateGroupMemberLabel(
+              {
+                conversationId: group.id,
+                labelEmoji,
+                labelString: labelStringForSave,
+              },
+              {
+                onSuccess() {
+                  setIsSaving(false);
+                },
+                onFailure() {
+                  setIsSaving(false);
+                  setIsShowingGeneralError(true);
+                },
+              }
+            );
+          }}
+        >
+          {i18n('icu:save')}
+        </AxoButton.Root>
+      </div>
+      {confirmDiscardModal}
+      <AxoAlertDialog.Root
+        open={isShowingGeneralError && isActive && !confirmDiscardModal}
+        onOpenChange={value => {
+          if (!value) {
+            setIsShowingGeneralError(false);
+          }
+        }}
+      >
+        <AxoAlertDialog.Content escape="cancel-is-noop">
+          <AxoAlertDialog.Body>
+            <AxoAlertDialog.Title>
+              {i18n('icu:ConversationDetails--member-label--error-title')}
+            </AxoAlertDialog.Title>
+            <AxoAlertDialog.Description>
+              {i18n('icu:ConversationDetails--member-label--error-generic')}
+            </AxoAlertDialog.Description>
+          </AxoAlertDialog.Body>
+          <AxoAlertDialog.Footer>
+            <AxoAlertDialog.Action
+              variant="strong-primary"
+              onClick={() => {
+                setIsShowingGeneralError(false);
+              }}
+            >
+              {i18n('icu:ok')}
+            </AxoAlertDialog.Action>
+          </AxoAlertDialog.Footer>
+        </AxoAlertDialog.Content>
+      </AxoAlertDialog.Root>
+      <AxoAlertDialog.Root
+        open={isShowingPermissionsError && isActive && !confirmDiscardModal}
+        onOpenChange={value => {
+          if (!value) {
+            setIsShowingPermissionsError(false);
+            popPanelForConversation();
+          }
+        }}
+      >
+        <AxoAlertDialog.Content escape="cancel-is-noop">
+          <AxoAlertDialog.Body>
+            <AxoAlertDialog.Title>
+              {i18n('icu:ConversationDetails--member-label--error-title')}
+            </AxoAlertDialog.Title>
+            <AxoAlertDialog.Description>
+              {i18n('icu:ConversationDetails--member-label--error-permissions')}
+            </AxoAlertDialog.Description>
+          </AxoAlertDialog.Body>
+          <AxoAlertDialog.Footer>
+            <AxoAlertDialog.Action
+              variant="strong-primary"
+              onClick={() => {
+                setIsShowingPermissionsError(false);
+                popPanelForConversation();
+              }}
+            >
+              {i18n('icu:ok')}
+            </AxoAlertDialog.Action>
+          </AxoAlertDialog.Footer>
+        </AxoAlertDialog.Content>
+      </AxoAlertDialog.Root>
+    </div>
+  );
+}

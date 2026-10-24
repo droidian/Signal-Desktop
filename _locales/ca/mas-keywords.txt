@@ -1,0 +1,1 @@
+signal,missatge,messenger,trucada,veu,xifrat,privat,segur,privacitat,grup,vídeo,xat,històries

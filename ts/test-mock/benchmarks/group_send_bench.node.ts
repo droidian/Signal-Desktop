@@ -1,0 +1,283 @@
+// Copyright 2022 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import assert from 'node:assert';
+
+import type { PrimaryDevice } from '@signalapp/mock-server';
+import {
+  StorageState,
+  EnvelopeType,
+  ReceiptType,
+} from '@signalapp/mock-server';
+import {
+  Bootstrap,
+  debug,
+  RUN_COUNT,
+  GROUP_SIZE,
+  CONVERSATION_SIZE,
+  DISCARD_COUNT,
+  GROUP_DELIVERY_RECEIPTS,
+  BLOCKED_COUNT,
+} from './fixtures.node.ts';
+import { stats } from '../../test-helpers/benchmarkStats.std.ts';
+import { sleep } from '../../util/sleep.std.ts';
+import { typeIntoInput, waitForEnabledComposer } from '../helpers.node.ts';
+import { MINUTE } from '../../util/durations/index.std.ts';
+
+const LAST_MESSAGE = 'start sending messages now';
+
+Bootstrap.benchmark(async (bootstrap: Bootstrap): Promise<void> => {
+  const { contacts, phone } = bootstrap;
+
+  const members = [...contacts].slice(0, GROUP_SIZE);
+
+  const GROUP_NAME = 'Mock Group';
+  const group = await phone.createGroup({
+    title: GROUP_NAME,
+    members: [phone, ...members],
+  });
+
+  await phone.setStorageState(
+    StorageState.getEmpty()
+      .addGroup(group, { whitelisted: true })
+      .pinGroup(group)
+  );
+
+  const app = await bootstrap.link();
+
+  const { server, desktop } = bootstrap;
+  const [first] = members as [PrimaryDevice];
+
+  const messages = new Array<Buffer<ArrayBuffer>>();
+  debug('encrypting');
+  // Fill left pane
+  for (const contact of members.slice(0, CONVERSATION_SIZE).reverse()) {
+    const messageTimestamp = bootstrap.getTimestamp();
+
+    messages.push(
+      // oxlint-disable-next-line no-await-in-loop
+      await contact.encryptText(desktop, `hello from: ${contact.profileName}`, {
+        timestamp: messageTimestamp,
+        sealed: true,
+      })
+    );
+    messages.push(
+      // oxlint-disable-next-line no-await-in-loop
+      await phone.encryptSyncRead(desktop, {
+        timestamp: bootstrap.getTimestamp(),
+        messages: [
+          {
+            senderAci: contact.device.aci,
+            timestamp: messageTimestamp,
+          },
+        ],
+      })
+    );
+  }
+
+  assert.ok(
+    BLOCKED_COUNT < members.length - 1,
+    'Must block fewer members than are in the group'
+  );
+
+  const unblockedMembers = members.slice(0, members.length - BLOCKED_COUNT);
+  const blockedMembers = members.slice(members.length - BLOCKED_COUNT);
+
+  if (blockedMembers.length > 0) {
+    let state = await phone.expectStorageState('blocking');
+
+    for (const member of blockedMembers) {
+      state = state.addContact(member, {
+        blocked: true,
+      });
+    }
+    await phone.setStorageState(state);
+  }
+
+  // Fill group
+  for (let i = 0; i < CONVERSATION_SIZE; i += 1) {
+    // oxlint-disable-next-line typescript/no-non-null-assertion
+    const contact = unblockedMembers[i % unblockedMembers.length]!;
+    const messageTimestamp = bootstrap.getTimestamp();
+
+    const isLast = i === CONVERSATION_SIZE - 1;
+    messages.push(
+      // oxlint-disable-next-line no-await-in-loop
+      await contact.encryptText(
+        desktop,
+        isLast ? LAST_MESSAGE : `#${i} from: ${contact.profileName}`,
+        {
+          timestamp: messageTimestamp,
+          sealed: true,
+          group,
+        }
+      )
+    );
+    // Last message should trigger an unread indicator
+    if (!isLast) {
+      messages.push(
+        // oxlint-disable-next-line no-await-in-loop
+        await phone.encryptSyncRead(desktop, {
+          timestamp: bootstrap.getTimestamp(),
+          messages: [
+            {
+              senderAci: contact.device.aci,
+              timestamp: messageTimestamp,
+            },
+          ],
+        })
+      );
+    }
+  }
+  debug('encrypted');
+
+  debug('sending first message');
+  {
+    const firstMessage = messages.shift();
+    if (firstMessage != null) {
+      await server.send(desktop, firstMessage);
+    }
+  }
+
+  const window = await app.getWindow();
+
+  debug('waiting for conversation');
+  {
+    const leftPane = window.locator('#LeftPane');
+
+    // Wait for group state to be fetched
+    await leftPane
+      .locator(
+        `.module-conversation-list__item--contact-or-conversation[data-testid="${group.id}"]`
+      )
+      .getByText(GROUP_NAME)
+      .waitFor();
+  }
+
+  debug('sending the rest of messages');
+  await Promise.all(messages.map(message => server.send(desktop, message)));
+
+  debug('opening conversation');
+  {
+    const leftPane = window.locator('#LeftPane');
+
+    await leftPane
+      .locator(
+        `.module-conversation-list__item--contact-or-conversation[data-testid="${group.id}"]` +
+          ` >> text=${LAST_MESSAGE}`
+      )
+      .click();
+  }
+
+  debug('scrolling to bottom of timeline');
+  await window
+    .locator('.ScrollDownButton')
+    .or(window.locator(`.module-message >> text="${LAST_MESSAGE}"`))
+    .click({ timeout: MINUTE });
+
+  debug('finding message in timeline');
+  {
+    const item = window
+      .locator(`.module-message >> text="${LAST_MESSAGE}"`)
+      .first();
+    await item.click({ timeout: MINUTE });
+  }
+
+  const deltaList = new Array<number>();
+  const input = await waitForEnabledComposer(window);
+
+  function sendReceiptsInBatches({
+    receipts,
+    batchSize,
+    nextBatchSize,
+    runId,
+    delay,
+  }: {
+    receipts: Array<Buffer<ArrayBuffer>>;
+    batchSize: number;
+    nextBatchSize: number;
+    runId: number;
+    delay: number;
+  }) {
+    const receiptsToSend = receipts.splice(0, batchSize);
+    debug(`sending ${receiptsToSend.length} receipts for runId ${runId}`);
+
+    receiptsToSend.forEach(delivery => server.send(desktop, delivery));
+
+    if (receipts.length) {
+      setTimeout(
+        () =>
+          sendReceiptsInBatches({
+            receipts,
+            batchSize: nextBatchSize,
+            nextBatchSize,
+            runId,
+            delay,
+          }),
+        delay
+      );
+    }
+  }
+
+  let receiptsFromPreviousMessage: Array<Buffer<ArrayBuffer>> = [];
+  for (let runId = 0; runId < RUN_COUNT + DISCARD_COUNT; runId += 1) {
+    debug(`sending previous ${receiptsFromPreviousMessage.length} receipts`);
+
+    // deliver up to 256 receipts at once (max that server will send) and then in chunks
+    // of 30 every 200ms to approximate real behavior as we acknowledge each batch
+    sendReceiptsInBatches({
+      receipts: receiptsFromPreviousMessage,
+      batchSize: 256,
+      nextBatchSize: 30,
+      delay: 100,
+      runId,
+    });
+
+    debug('entering message text');
+    // oxlint-disable-next-line no-await-in-loop
+    await typeIntoInput(input, `my message ${runId}`, '');
+    // oxlint-disable-next-line no-await-in-loop
+    await input.press('Enter');
+
+    debug('waiting for message on server side');
+    // oxlint-disable-next-line no-await-in-loop
+    const { body, source, envelopeType } = await first.waitForMessage();
+    assert.strictEqual(body, `my message ${runId}`);
+    assert.strictEqual(source, desktop);
+    assert.strictEqual(envelopeType, EnvelopeType.SenderKey);
+
+    debug('waiting for timing from the app');
+    // oxlint-disable-next-line no-await-in-loop
+    const { timestamp, delta } = await app.waitForMessageSend();
+
+    if (GROUP_DELIVERY_RECEIPTS > 1) {
+      // Sleep to allow any receipts from previous rounds to be processed
+      // oxlint-disable-next-line no-await-in-loop
+      await sleep(1000);
+    }
+
+    debug('sending delivery receipts');
+    // oxlint-disable-next-line no-await-in-loop
+    receiptsFromPreviousMessage = await Promise.all(
+      members.slice(0, GROUP_DELIVERY_RECEIPTS).map(member =>
+        member.encryptReceipt(desktop, {
+          timestamp: timestamp + 1,
+          messageTimestamps: [timestamp],
+          type: ReceiptType.Delivery,
+        })
+      )
+    );
+
+    if (runId >= DISCARD_COUNT) {
+      deltaList.push(delta);
+      // oxlint-disable-next-line no-console
+      console.log('run=%d info=%j', runId - DISCARD_COUNT, { delta });
+    } else {
+      // oxlint-disable-next-line no-console
+      console.log('discarded=%d info=%j', runId, { delta });
+    }
+  }
+
+  // oxlint-disable-next-line no-console
+  console.log('stats info=%j', { delta: stats(deltaList, [99, 99.8]) });
+});

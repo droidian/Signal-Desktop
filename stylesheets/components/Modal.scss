@@ -1,23 +1,23 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
-.module-Modal {
-  @include popper-shadow();
-  border-radius: 8px;
-  overflow: hidden;
-  // We need this to be a number not divisible by 5 so that if we have sticky
-  // buttons the bottom doesn't bleed through by 1px.
-  max-height: 89vh;
-  display: flex;
-  flex-direction: column;
-  @include light-theme() {
-    background: $color-white;
-    color: $color-gray-90;
-  }
+@use '../mixins';
+@use '../variables';
 
-  @include dark-theme() {
-    background: $color-gray-80;
-    color: $color-gray-05;
+.module-Modal {
+  @include mixins.popper-shadow();
+  & {
+    border-radius: 8px;
+    overflow: hidden;
+    // We need this to be a number not divisible by 5 so that if we have sticky
+    // buttons the bottom doesn't bleed through by 1px.
+    max-height: 89vh;
+    display: flex;
+    flex-direction: column;
+
+    background: var(--axo-color-material-dialog);
+    backdrop-filter: blur(24px);
+    color: var(--axo-color-label-primary);
   }
 
   &__header {
@@ -35,18 +35,20 @@
   }
 
   &__title {
-    @include font-body-1-bold;
+    @include mixins.font-body-1-bold;
     margin: 0;
     padding: 0;
     flex: 1;
   }
 
   &__back-button {
-    @include button-reset;
+    @include mixins.button-reset;
 
-    border-radius: 4px;
-    height: 20px;
-    width: 20px;
+    & {
+      border-radius: 4px;
+      height: 20px;
+      width: 20px;
+    }
 
     &::before {
       content: '';
@@ -54,33 +56,25 @@
       width: 100%;
       height: 100%;
 
-      @include light-theme {
-        @include color-svg(
-          '../images/icons/v3/chevron/chevron-left.svg',
-          $color-gray-75
-        );
-      }
-
-      @include dark-theme {
-        @include color-svg(
-          '../images/icons/v3/chevron/chevron-left.svg',
-          $color-gray-15
-        );
-      }
+      @include mixins.color-svg(
+        '../images/icons/v3/chevron/chevron-left.svg',
+        var(--axo-color-label-secondary)
+      );
     }
 
-    &:hover,
-    &:focus {
-      box-shadow: 0 0 0 2px $color-ultramarine;
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
     }
   }
 
   &__close-button {
-    @include button-reset;
+    @include mixins.button-reset;
 
-    border-radius: 4px;
-    height: 20px;
-    width: 20px;
+    & {
+      border-radius: 4px;
+      height: 20px;
+      width: 20px;
+    }
 
     &::before {
       content: '';
@@ -88,26 +82,22 @@
       width: 100%;
       height: 100%;
 
-      @include light-theme {
-        @include color-svg('../images/icons/v3/x/x.svg', $color-gray-75);
-      }
-
-      @include dark-theme {
-        @include color-svg('../images/icons/v3/x/x.svg', $color-gray-15);
-      }
+      @include mixins.color-svg(
+        '../images/icons/v3/x/x.svg',
+        var(--axo-color-label-secondary)
+      );
     }
 
-    &:hover,
-    &:focus {
-      box-shadow: 0 0 0 2px $color-ultramarine;
+    &:focus-visible {
+      @include mixins.axo-focus-ring;
     }
   }
 
   &__body {
-    @include scrollbar;
-    @include font-body-1;
+    @include mixins.scrollbar-on-hover;
+    @include mixins.font-body-1;
     margin: 0;
-    overflow-y: overlay;
+    overflow-y: auto;
     overflow-x: auto;
     transition: border-color 150ms ease-in-out;
   }
@@ -126,12 +116,7 @@
 
   &--has-header#{&}--header-divider {
     .module-Modal__body {
-      @include light-theme() {
-        border-top-color: $color-gray-05;
-      }
-      @include dark-theme() {
-        border-top-color: $color-gray-90;
-      }
+      border-top-color: var(--axo-color-border-primary);
     }
   }
 
@@ -141,26 +126,15 @@
       border-top: 1px solid transparent;
       border-bottom: 1px solid transparent;
 
-      &--scrolled {
-        @include light-theme {
-          border-top-color: $color-gray-05;
-        }
-
-        @include dark-theme {
-          border-top-color: $color-gray-90;
-        }
+      &--scrollVerticalOverflow:not(&--scrollAtTop) {
+        border-top-color: var(--axo-color-border-primary);
       }
     }
   }
 
   &--has-footer#{&}--footer-divider {
     .module-Modal__body {
-      @include light-theme() {
-        border-bottom-color: $color-gray-05;
-      }
-      @include dark-theme() {
-        border-bottom-color: $color-gray-90;
-      }
+      border-bottom-color: var(--axo-color-border-primary);
     }
   }
 
@@ -168,14 +142,8 @@
     .module-Modal__body {
       border-bottom: 1px solid transparent;
 
-      &--overflow:not(&--scrolledToBottom) {
-        @include light-theme {
-          border-bottom-color: $color-gray-05;
-        }
-
-        @include dark-theme {
-          border-bottom-color: $color-gray-90;
-        }
+      &--scrollVerticalOverflow:not(&--scrollAtBottom) {
+        border-bottom-color: var(--axo-color-border-primary);
       }
     }
   }
@@ -196,59 +164,6 @@
     &--one-button-per-line {
       flex-direction: column;
       align-items: flex-end;
-    }
-  }
-
-  // Overrides for a modal with important message
-  &--important {
-    padding-block: 10px 16px;
-    padding-inline: 12px;
-
-    .module-Modal__header {
-      // Necessary because of the larger top margins for the title
-      align-items: start;
-      padding: 0;
-    }
-
-    .module-Modal__body {
-      padding-block: 0 4px !important;
-      padding-inline: 12px !important;
-    }
-
-    .module-Modal__body p {
-      margin-block: 0 20px;
-      margin-inline: 0;
-    }
-
-    .module-Modal__title {
-      @include font-title-2;
-      text-align: center;
-      margin-block: 10px 22px;
-      margin-inline: 0;
-
-      flex-shrink: 0;
-
-      &--with-x-button {
-        margin-block-start: 22px;
-      }
-    }
-
-    .module-Modal__button-footer {
-      justify-content: center;
-      margin-top: 27px;
-      flex-grow: 0;
-      flex-shrink: 0;
-      padding-block: 0 4px;
-      padding-inline: 12px;
-
-      .module-Button {
-        flex-grow: 1;
-        max-width: 152px;
-
-        &:not(:first-child) {
-          margin-inline-start: 16px;
-        }
-      }
     }
   }
 }

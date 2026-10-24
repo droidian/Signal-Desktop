@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal 將使用你的相機來進行視訊通話。"
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Signal需要使用你的麥克風才能撥打和接聽電話並記錄語音訊息。"
+  }
+}

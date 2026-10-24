@@ -8,11 +8,12 @@ declare global {
   // eslint-disable-next-line no-restricted-syntax
   interface Window {
     uploadStickerPack(
-      manifest: Uint8Array,
-      stickers: ReadonlyArray<Uint8Array>,
+      manifest: Uint8Array<ArrayBuffer>,
+      stickers: ReadonlyArray<Uint8Array<ArrayBuffer>>,
       onProgres?: () => void
     ): Promise<string>;
     installStickerPack(packId: string, key: string): void;
+    sanitizeWebp(data: Uint8Array<ArrayBuffer>): Promise<void>;
     getFilePath(file: File): string;
   }
 }
@@ -55,4 +56,10 @@ export async function upload(
 
 export function getFilePath(file: File): string {
   return window.getFilePath(file);
+}
+
+export async function sanitizeWebp(
+  data: Uint8Array<ArrayBuffer>
+): Promise<void> {
+  return window.sanitizeWebp(data);
 }

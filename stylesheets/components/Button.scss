@@ -1,331 +1,138 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use 'sass:color';
+@use '../mixins';
+@use '../variables';
+
 .module-Button {
-  @mixin focus-box-shadow($inner-color, $outer-color) {
-    &:focus {
-      box-shadow:
-        0 0 0 1px $inner-color,
-        0 0 0 4px $outer-color;
-    }
+  @include mixins.button-reset;
+  & {
+    border-radius: 4px;
+    padding-block: 8px;
+    padding-inline: 16px;
+    text-align: center;
+    -webkit-app-region: no-drag;
   }
 
-  @mixin hover-and-active-states($background-color, $mix-color) {
-    &:hover {
-      @include not-disabled {
-        background: mix($background-color, $mix-color, 85%);
-      }
-    }
-    &:active {
-      @include not-disabled {
-        background: mix($background-color, $mix-color, 75%);
-      }
-    }
+  &:focus-visible {
+    @include mixins.axo-focus-ring;
   }
 
-  @include button-reset;
-  border-radius: 4px;
-  padding-block: 8px;
-  padding-inline: 16px;
-  text-align: center;
-  user-select: none;
-  -webkit-app-region: no-drag;
-
-  @include keyboard-mode {
-    @include focus-box-shadow($color-white, $color-ultramarine);
-  }
-
-  @include dark-keyboard-mode {
-    @include focus-box-shadow($color-black, $color-ultramarine-icon);
-  }
-
-  @include disabled {
+  @include mixins.disabled {
     cursor: not-allowed;
   }
 
   &--large {
-    @include font-title-2;
+    @include mixins.font-title-2;
     font-weight: bold;
   }
 
   &--medium {
-    @include font-body-1-bold;
+    @include mixins.font-body-1-bold;
   }
 
   &--small {
-    @include font-body-2;
-    @include rounded-corners;
+    @include mixins.font-body-2;
+    @include mixins.rounded-corners;
     padding-block: 6px;
     padding-inline: 12px;
   }
 
   &--primary {
-    $color: $color-white;
-    $background-color: $color-ultramarine;
+    color: var(--axo-color-label-primary-oncolor);
+    background: var(--axo-color-fill-accent);
 
-    color: $color;
-    background: $background-color;
-
-    @include disabled {
-      color: fade-out($color, 0.4);
-      background: fade-out($background-color, 0.6);
+    &:not([disabled]):active {
+      background: var(--axo-color-fill-accent-pressed);
     }
 
+    &[disabled],
     &--discouraged {
-      @include light-theme {
-        opacity: 0.4;
-      }
-      @include dark-theme {
-        opacity: 0.5;
-      }
-    }
-
-    @include light-theme {
-      @include hover-and-active-states($background-color, $color-black);
-    }
-
-    @include dark-theme {
-      @include hover-and-active-states($background-color, $color-white);
+      color: var(--axo-color-label-disabled-oncolor);
     }
   }
 
   &--secondary {
-    @include light-theme {
-      $color: $color-gray-90;
-      $background-color: $color-gray-05;
+    background: var(--axo-color-fill-secondary);
+    color: var(--axo-color-label-primary);
 
-      color: $color;
-      background: $background-color;
-
-      @include disabled {
-        color: $color-black-alpha-40;
-        background: fade-out($background-color, 0.6);
-      }
-
-      &--affirmative {
-        color: $color-ultramarine;
-      }
-      &--affirmative--discouraged {
-        color: fade-out($color-ultramarine, 0.5);
-      }
-
-      &--destructive {
-        color: $color-accent-red;
-      }
-      &--destructive--discouraged {
-        color: fade-out($color-ultramarine, 0.5);
-      }
-
-      @include hover-and-active-states($background-color, $color-black);
+    &:not([disabled]):active {
+      background: var(--axo-color-fill-secondary-pressed);
     }
 
-    @include dark-theme {
-      $color: $color-gray-05;
-      $background-color: $color-gray-65;
+    &[disabled],
+    &--discouraged {
+      color: var(--axo-color-label-disabled-oncolor);
+    }
 
-      color: $color;
-      background: $background-color;
+    &--affirmative {
+      color: var(--axo-color-label-accent);
 
-      @include disabled {
-        color: $color-white-alpha-20;
-        background: fade-out($background-color, 0.6);
+      &[disabled],
+      &--discouraged {
+        color: var(--axo-color-label-accent-disabled);
       }
+    }
 
-      &--affirmative {
-        color: $color-ultramarine-light;
-      }
-      &--affirmative--discouraged {
-        color: fade-out($color-ultramarine-light, 0.5);
-      }
+    &--destructive {
+      color: var(--axo-color-label-destructive);
 
-      &--destructive {
-        color: $color-accent-red;
+      &[disabled],
+      &--discouraged {
+        color: var(--axo-color-label-destructive-disabled);
       }
-      &--destructive--discouraged {
-        color: fade-out($color-accent-red, 0.5);
-      }
-
-      @include hover-and-active-states($background-color, $color-white);
     }
   }
 
   &--destructive {
-    $color: $color-white;
-    $background-color: $color-accent-red;
+    color: var(--axo-color-label-primary-oncolor);
+    background: var(--axo-color-fill-destructive);
 
-    color: $color;
-    background: $background-color;
-
-    @include disabled {
-      color: fade-out($color, 0.4);
-      background: fade-out($background-color, 0.6);
+    &:not([disabled]):active {
+      background: var(--axo-color-fill-destructive-pressed);
     }
 
-    @include light-theme {
-      @include hover-and-active-states($background-color, $color-black);
-    }
-
-    @include dark-theme {
-      @include hover-and-active-states($background-color, $color-white);
+    &[disabled],
+    &--discouraged {
+      color: var(--axo-color-label-disabled-oncolor);
     }
   }
 
   &--calling {
-    $color: $color-white;
-    $background-color: $color-accent-green;
+    color: var(--axo-color-label-primary-oncolor);
+    background: var(--axo-color-fill-affirmative);
 
-    @include rounded-corners;
-    color: $color;
-    background: $background-color;
-
-    @include disabled {
-      color: fade-out($color, 0.4);
-      background: fade-out($background-color, 0.6);
+    &:not([disabled]):active {
+      background: var(--axo-color-fill-affirmative-pressed);
     }
 
+    &[disabled],
     &--discouraged {
-      @include light-theme {
-        opacity: 0.4;
-      }
-      @include dark-theme {
-        opacity: 0.5;
-      }
-    }
-
-    @include light-theme {
-      @include hover-and-active-states($background-color, $color-black);
-    }
-
-    @include dark-theme {
-      @include hover-and-active-states($background-color, $color-white);
+      color: var(--axo-color-label-disabled-oncolor);
     }
   }
 
   &--system-message {
-    @include rounded-corners;
+    background: var(--axo-color-fill-primary);
+    color: var(--axo-color-label-accent);
+    @include mixins.rounded-corners;
+
+    &:not(:disabled, &--discouraged) {
+      &:active {
+        background: var(--axo-color-fill-primary-pressed);
+      }
+    }
+
+    &:disabled,
+    &--discouraged {
+      color: var(--axo-color-label-accent-disabled);
+    }
 
     &.module-Button--small {
       padding-top: 5px;
       padding-bottom: 5px;
       font-weight: 500;
-    }
-
-    @include light-theme {
-      $color: $color-ultramarine;
-      $background-color: $color-gray-02;
-
-      color: $color;
-      background: $background-color;
-
-      @include disabled {
-        color: fade-out($color, 0.4);
-        background: fade-out($background-color, 0.6);
-      }
-      &--discouraged {
-        color: fade-out($color, 0.5);
-      }
-
-      @include hover-and-active-states($background-color, $color-black);
-    }
-
-    @include dark-theme {
-      $color: $color-white;
-      $background-color: $color-gray-65;
-
-      color: $color;
-      background: $background-color;
-
-      @include disabled {
-        color: fade-out($color, 0.4);
-        background: fade-out($background-color, 0.6);
-      }
-      &--discouraged {
-        color: fade-out($color, 0.5);
-      }
-
-      @include hover-and-active-states($background-color, $color-white);
-    }
-  }
-
-  &--details {
-    align-items: center;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    font-size: 11px;
-    justify-content: center;
-    line-height: 10px;
-    min-height: 44px;
-    min-width: 68px;
-    padding: 8px;
-
-    &--discouraged {
-      @include light-theme {
-        opacity: 0.4;
-      }
-      @include dark-theme {
-        opacity: 0.5;
-      }
-    }
-
-    @include light-theme {
-      background-color: $color-gray-05;
-      color: $color-black;
-    }
-
-    @include dark-theme {
-      background-color: $color-gray-65;
-      color: $color-gray-05;
-    }
-
-    &:focus {
-      @include keyboard-mode {
-        box-shadow: 0 0 0 2px $color-ultramarine;
-      }
-    }
-
-    &::before {
-      margin-bottom: 6px;
-    }
-  }
-
-  &--icon {
-    @mixin button-icon($icon) {
-      content: '';
-      display: block;
-      height: 18px;
-      width: 18px;
-
-      @include light-theme {
-        @include color-svg($icon, $color-black);
-      }
-      @include dark-theme {
-        @include color-svg($icon, $color-gray-05);
-      }
-    }
-
-    &--audio::before {
-      @include button-icon('../images/icons/v3/phone/phone-compact.svg');
-    }
-
-    &--message::before {
-      @include button-icon('../images/icons/v3/chat/chat-compact.svg');
-    }
-
-    &--muted::before {
-      @include button-icon('../images/icons/v3/bell/bell-slash-compact.svg');
-    }
-
-    &--search::before {
-      @include button-icon('../images/icons/v3/search/search-compact.svg');
-    }
-
-    &--unmuted::before {
-      @include button-icon('../images/icons/v3/bell/bell-compact.svg');
-    }
-
-    &--video::before {
-      @include button-icon('../images/icons/v3/video/video-compact.svg');
     }
   }
 }

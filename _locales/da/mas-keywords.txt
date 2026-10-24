@@ -1,0 +1,1 @@
+signal,besked,messenger,opkald,krypteret,privat,sikker,privatliv,gruppe,video,chat,historier

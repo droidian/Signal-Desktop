@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Für Videoanrufe nutzt Signal deine Kamera."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Für Anrufe und zum Aufnehmen von Sprachnachrichten benötigt Signal Zugriff auf dein Mikrofon."
+  }
+}

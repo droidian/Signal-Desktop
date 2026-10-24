@@ -1,0 +1,21 @@
+O Signal é uma app de mensagens focada na privacidade. É grátis e fácil de usar, com uma encriptação robusta ponta-a-ponta que mantém os seus chats e chamadas completamente privados. O Signal não consegue ler as suas mensagens ou ouvir as suas chamadas, nem mais ninguém consegue. 
+
+• O Signal no MacOS vincula-se ao Signal no seu telemóvel. 
+
+• Envie mensagens de texto e voz, fotos, vídeos, GIFs e ficheiros gratuitamente e com encriptação ponta a ponta. 
+
+• Ligue-se a conversas de grupo com até 1000 pessoas. Controle quem pode postar e gerir membros do grupo com as definições de permissão de administrador.
+
+• Ligue para os seus amigos com chamadas de voz e vídeo encriptadas de ponta a ponta e com a melhor qualidade. As chamadas de grupo suportam até 75 pessoas.
+
+• O Signal foi concebido para a sua privacidade. Não sabemos nada sobre si ou com quem está a falar. O nosso protocolo do Signal "open source" significa que não podemos ler as suas mensagens nem ouvir as suas chamadas. Nem mais ninguém pode. Sem "portas das traseiras", sem recolha de dados, sem cedências. 
+
+• Partilhe histórias com fotos, mensagens e vídeos que desaparecem após 24 horas. As definições de privacidade permitem-lhe controlar exatamente quem vê cada História.
+
+• O Signal é independente e não tem fins lucrativos; um tipo diferente de tecnologia criado por um tipo diferente de organização. Como uma organização sem fins lucrativos tipo 501c3, somos apoiados pelos seus donativos, não por anunciantes ou investidores. 
+
+• Para obter apoio técnico, perguntas ou mais informações, visite https://support.signal.org/
+
+Para verificar o nosso código fonte, visite https://github.com/signalapp 
+
+Siga-nos no X @signalapp e Instagram @signal_app

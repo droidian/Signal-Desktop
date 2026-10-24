@@ -1,0 +1,57 @@
+# Copyright 2025 Signal Messenger, LLC
+# SPDX-License-Identifier: AGPL-3.0-only
+name: ICU Book
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.*'
+jobs:
+  build-icu-book:
+    name: Build ICU Book
+    runs-on: ubuntu-latest-8-cores
+    if: ${{ github.repository == 'signalapp/Signal-Desktop-Private' }}
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup environment
+        uses: ./.github/actions/setup
+        with:
+          install-playwright: true
+
+      - name: Build storybook
+        run: pnpm run build:storybook
+
+      - id: storybook-server
+        name: Serve storybook
+        background: true
+        run: pnpm run test:storybook:serve
+
+      - name: Run storybook tests
+        run: pnpm run test:storybook:test
+        env:
+          ARTIFACTS_DIR: stories
+
+      - name: Stop storybook server
+        cancel: storybook-server
+
+      - name: Build stories ICU book
+        run: node scripts/compile-stories-icu-lookup.mjs stories
+
+      - name: Upload test artifacts
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: desktop-test-icu
+          path: stories
+          compression-level: 9
+
+      - name: Upload release artifacts
+        if: github.event_name != 'workflow_dispatch'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: desktop-${{ github.ref_name }}-icu
+          path: stories
+          compression-level: 9

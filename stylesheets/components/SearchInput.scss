@@ -1,12 +1,20 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
+
 .module-SearchInput {
   &__container {
     position: relative;
-    flex: 1 0 0;
     margin-inline: 16px;
     margin-bottom: 8px;
+    flex-grow: 1;
+
+    &--noMargin {
+      margin-inline: 0px;
+      margin-bottom: 0px;
+    }
   }
 
   &__icon {
@@ -17,50 +25,33 @@
     top: 6px;
     width: 16px;
 
-    @include light-theme {
-      @include color-svg(
-        '../images/icons/v3/search/search-compact-light.svg',
-        $color-gray-45
-      );
-    }
-    @include dark-theme {
-      @include color-svg(
-        '../images/icons/v3/search/search-compact-light.svg',
-        $color-gray-25
-      );
-    }
+    @include mixins.color-svg(
+      '../images/icons/v3/search/search-compact-light.svg',
+      var(--axo-color-label-secondary)
+    );
   }
 
   &__input {
-    @include font-body-2;
+    @include mixins.font-body-2;
     border: solid 1px transparent;
     border-radius: 8px;
     height: 28px;
     padding-inline: 30px 5px;
     width: 100%;
 
-    @include light-theme {
-      background-color: $color-black-alpha-06;
-      color: $color-gray-90;
+    background: var(--axo-color-fill-primary);
+    color: var(--axo-color-label-primary);
 
-      &:placeholder {
-        color: $color-gray-45;
-      }
-    }
-    @include dark-theme {
-      background-color: $color-white-alpha-12;
-      color: $color-gray-05;
-
-      &:placeholder {
-        color: $color-gray-25;
-      }
+    &::placeholder {
+      color: var(--axo-color-label-placeholder);
     }
 
-    &:focus {
-      @include keyboard-mode {
-        border: solid 1px $color-ultramarine;
-      }
+    &:focus-visible {
       outline: none;
+    }
+
+    &[data-focus-visible='true'] {
+      @include mixins.axo-focus-ring;
     }
 
     &--with-text {
@@ -75,23 +66,21 @@
     top: 6px;
     width: 16px;
 
-    @include light-theme {
-      @include color-svg('../images/icons/v3/x/x-compact.svg', $color-gray-60);
-    }
-    @include dark-theme {
-      @include color-svg('../images/icons/v3/x/x-compact.svg', $color-gray-25);
-    }
+    @include mixins.color-svg(
+      '../images/icons/v3/x/x-compact.svg',
+      var(--axo-color-label-secondary)
+    );
   }
 
   &__description {
     margin-block-start: 12px;
-    @include font-subtitle;
+    @include mixins.font-subtitle;
 
-    @include light-theme {
-      color: $color-gray-60;
+    @include mixins.light-theme {
+      color: variables.$color-gray-60;
     }
-    @include dark-theme {
-      color: $color-gray-05;
+    @include mixins.dark-theme {
+      color: variables.$color-gray-05;
     }
   }
 }

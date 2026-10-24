@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal bruker kameraet ditt i videosamtaler."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Signal trenger tilgang til mikrofonen din for å kunne foreta anrop, motta telefonsamtaler og ta opp talemeldinger."
+  }
+}

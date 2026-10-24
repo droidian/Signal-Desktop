@@ -1,0 +1,21 @@
+Signal este o aplicație pentru mesaje care pune confidențialitatea pe primul loc. Este gratuit și ușor de folosit, cu criptare puternică integrală, care păstrează conversațiile și apelurile complet private. Signal nu îți poate citi mesajele sau asculta apelurile și nimeni altcineva nu poate. 
+
+• Signal pe MacOS se conectează cu Signal pe telefon. 
+
+• Trimite gratuit texte, mesaje vocale, fotografii, videoclipuri, GIF-uri și fișiere criptate end-to-end. 
+
+• Rămâi conectat/ă la conversațiile de grup cu până la 1000 de persoane. Controlează cine poate posta și gestionează membrii de grup cu setările de permisiune de administrator.
+
+• Sună-ți prietenii, făcând apeluri vocale și video extrem de clare și criptate integral. Apelurile de grup acceptă până la 75 de persoane.
+
+• Signal este construit pentru confidențialitatea ta. Nu știm nimic despre tine sau despre persoanele cu care vorbești. Protocolul Signal cu surse deschise înseamnă că nu îți putem citi mesajele și nu îți putem asculta apelurile. Și nici altcineva nu poate face așa ceva. Nu există breșe, colectare de date sau compromisuri. 
+
+• Distribuie fotografii, text și videoclipuri. Povești care dispar după 24 de ore. Setările de confidențialitate te ajută să rămâi în control și poți stabili cine îți vede fiecare Poveste.
+
+• Signal este o companie independentă și non-profit; un tip diferit de tehnologie pentru un tip diferit de organizație. Ca nonprofit de tip 501c3 suntem sprijiniți de donațiile tale, nu de publicitate sau investitori. 
+
+• Pentru asistență, întrebări sau informații suplimentare, intră pe: https://support.signal.org/
+
+Pentru a verifica codul nostru sursă, vizitează https://github.com/signalapp 
+
+Urmărește-ne pe X @signalapp și Instagram @signal_app

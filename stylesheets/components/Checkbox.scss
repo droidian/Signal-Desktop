@@ -1,6 +1,9 @@
 // Copyright 2021 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
+
 .Checkbox {
   &__container {
     align-items: center;
@@ -10,18 +13,8 @@
       height: 18px;
       width: 18px;
 
-      @include mouse-mode {
-        &:focus,
-        &:active {
-          outline: none;
-        }
-      }
-
-      @include keyboard-mode {
-        &:focus,
-        &:active {
-          outline: 1px solid $color-ultramarine;
-        }
+      &:focus-visible {
+        @include mixins.axo-focus-ring;
       }
     }
   }
@@ -33,12 +26,7 @@
   }
 
   &__description {
-    @include font-subtitle;
-    @include light-theme {
-      color: $color-gray-60;
-    }
-    @include dark-theme {
-      color: $color-gray-25;
-    }
+    @include mixins.font-subtitle;
+    color: var(--axo-color-label-secondary);
   }
 }

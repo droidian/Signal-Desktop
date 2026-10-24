@@ -1,0 +1,21 @@
+Pribatutasuna ardatz duen mezularitza-aplikazio bat da Signal. Doakoa eta erabilerraza da, eta txatak eta deiak erabat pribatu mantentzen dituen muturretik muturrerako enkriptatze sendoa du. Signal-ek ezin ditu irakurri zure mezuak, ez eta zure deiak entzun ere; ez guk, ez beste inork. 
+
+• MacOS-rako Signal telefonoko Signal-ekin lot daiteke. 
+
+• Bidali muturretik muturrera enkriptatutako mezuak, ahots-mezuak, argazkiak, bideoak, GIFak eta fitxategiak doan. 
+
+• Egon konektatuta 1.000 lagunerainoko talde-txatekin. Administratzaile-baimenen ezarpenen bidez, kontrolatu nork argitara dezakeen edukia eta nork kudea ditzakeen taldeko kideak.
+
+• Deitu zure lagunei goitik behera, muturretik muturrera enkriptatutako ahots-dei eta bideodeiekin. 75 lagunerainoko talde-deiak onartzen dira.
+
+• Signal zure pribatutasuna babesteko sortu da. Ez dakigu ezer zutaz, ez eta norekin hitz egiten duzun ere. Signal-en kode irekiko protokoloari esker, ezin ditugu irakurri zure mezuak, ez eta zure deiak entzun ere. Ez guk, ez beste inork ere. Ez dago ezkutuko helbururik, ez datu-bilketarik, ez konpromisorik. 
+
+• Partekatu argazkiak, testuak eta bideoak 24 orduren buruan desagertzen diren istorioetan. Pribatutasun-ezarpenen bidez, istorio bakoitza nork ikus dezakeen kontrola dezakezu.
+
+• Signal independentea da, eta ez du irabazi-asmorik; beste teknologia mota bat da, beste erakunde mota batek sortua. Irabazi-asmorik gabeko 501c3 erakunde gisa, zure dohaintzek sostengatzen gaituzte, ez iragarleek edo inbertitzaileek. 
+
+• Laguntza, galderak edo informazio gehiago lortzeko, joan https://support.signal.org/ helbidera.
+
+Gure iturburu-kodea ikusteko, bisitatu https://github.com/signalapp 
+
+Jarrai iezaguzu X-en (@signalapp) eta Instagram-en (@signal_app)

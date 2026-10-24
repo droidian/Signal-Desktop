@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Signal kasutab videokõnede jaoks sinu kaamerat."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Signal vajab kõnede tegemiseks ja vastuvõtmiseks ning häälsõnumite salvestamiseks ligipääsu mikrofonile."
+  }
+}

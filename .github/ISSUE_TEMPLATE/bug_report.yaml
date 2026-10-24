@@ -21,7 +21,7 @@ body:
       label: "Using a supported version?"
       description: "Search issues here: https://github.com/signalapp/Signal-Desktop/issues"
       options:
-        - label: I have searched searched open and closed issues for duplicates.
+        - label: I have searched open and closed issues for duplicates.
           required: true
         - label: I am using Signal-Desktop as provided by the Signal team, not a 3rd-party package.
           required: true
@@ -97,7 +97,7 @@ body:
     id: primary-device
     attributes:
       label: Version of Signal on your phone
-      description: "Android: Settings->Help,  iOS: Settings->General->About"
+      description: "Settings->Help"
       placeholder:
     validations:
       required: false

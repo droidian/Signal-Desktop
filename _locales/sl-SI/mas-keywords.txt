@@ -1,0 +1,1 @@
+signal,sporočilo,messenger,klic,glas,šifrirano,zasebno,varno,zasebnost,skupina,video,klepet,zgodbe

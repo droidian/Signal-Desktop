@@ -1,0 +1,21 @@
+Aip seolta teachtaireachtaí is ea é Signal, a bhfuil príobháideachas ag a chroílár. Tá sé saor in aisce agus so-úsáidte, agus tá criptiú cumhachtach ó cheann ceann aige a choinníonn do chomhráite agus do ghlaonna go hiomlán príobháideach. Níl Signal, ná duine ar bith eile, in ann do theachtaireachtaí a léamh ná éisteacht le do ghlaonna. 
+
+• Nascann Signal ar MacOS le Signal ar do ghuthán. 
+
+• Seol téacsanna criptithe ó cheann ceann, glórphoist, grianghraif, físeáin, GIFanna agus comhaid saor in aisce. 
+
+• Fan nasctha le grúpchomhráite le suas le 1,000 duine. Rialaigh na daoine a bhfuil cead acu postáil a dhéanamh agus bainistigh baill den ghrúpa le socruithe ceadanna riarthóra.
+
+• Cuir guthghlaonna agus físghlaonna ríshoiléire criptithe ó cheann ceann ar do chairde. Tá tacú i ngrúpghlaonna ag suas le 75 duine.
+
+• Dearadh Signal ar mhaithe le do phríobháideachas. Níl aon eolas againn ort ná ar na daoine lena mbíonn tú ag caint. Ciallaíonn ár bPrótacal foinse oscailte Signal nach féidir linn do theachtaireachtaí a léamh ná éisteacht le do glaonna. Ní féidir le duine ar bith eile é sin a dhéanamh ach oiread. Gan aon chúldoirse, bailiú sonraí ná comhghéilleadh. 
+
+• Comhroinn Scéalta grianghraf, téacs agus físe a imíonn as radharc tar éis 24 uair an chloig. A bhuí le socruithe príobháideachais tá tú i gceannas ar lucht féachana gach Scéil.
+
+• Tá Signal neamhspleách seachbhrabúsach; cineál eile teicneolaíochta ó chineál eile eagraíochta. Mar eagraíocht neamhbhrabúis 501c3 faighimid tacaíocht le do thabhartais, ní ó fhógróirí ná infheisteoirí. 
+
+• Chun ceist a chur nó tacaíocht nó tuilleadh faisnéise a fháil, téigh chuig https://support.signal.org/
+
+Chun eolas a chur ar ár gcód foinse, téigh chuig https://github.com/signalapp 
+
+Lean muid ar X @signalapp agus ar Instagram @signal_app

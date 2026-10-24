@@ -15,13 +15,28 @@
     <true/>
     <key>com.apple.security.device.camera</key>
     <true/>
+    <key>com.apple.security.device.usb</key>
+    <true/>
     <key>com.apple.security.files.downloads.read-write</key>
     <true/>
     <key>com.apple.security.files.user-selected.read-write</key>
     <true/>
-    <key>com.apple.security.personal-information.photos-library</key>
+    <key>com.apple.security.files.bookmarks.app-scope</key>
+    <true/>
+    <key>com.apple.security.print</key>
     <true/>
     <key>com.apple.security.network.client</key>
     <true/>
+    <key>com.apple.security.network.server</key>
+    <true/>
+    <key>com.apple.security.application-groups</key>
+    <array>
+      <string>U68MSDN6DR.org.whispersystems.signal-desktop</string>
+      <string>U68MSDN6DR.signal-desktop</string>
+    </array>
+    <key>com.apple.application-identifier</key>
+    <string>U68MSDN6DR.org.whispersystems.signal-desktop</string>
+    <key>com.apple.developer.team-identifier</key>
+    <string>U68MSDN6DR</string>
   </dict>
 </plist>

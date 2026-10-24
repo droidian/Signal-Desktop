@@ -1,0 +1,27 @@
+// Copyright 2024 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+import type { JSX } from 'react';
+
+import { FunImage } from './base/FunImage.dom.tsx';
+import type { FunImageAriaProps } from './types.dom.tsx';
+
+export type FunStickerProps = FunImageAriaProps &
+  Readonly<{
+    src: string;
+    size: number;
+    ignoreReducedMotion?: boolean;
+  }>;
+
+export function FunSticker(props: FunStickerProps): JSX.Element {
+  const { src, size, ignoreReducedMotion, ...ariaProps } = props;
+  return (
+    <FunImage
+      {...ariaProps}
+      className="FunSticker"
+      src={src}
+      width={size}
+      height={size}
+      ignoreReducedMotion={ignoreReducedMotion}
+    />
+  );
+}

@@ -1,0 +1,8 @@
+{
+  "NSCameraUsageDescription": {
+    "messageformat": "Úsáideann Signal do cheamara le haghaidh físghlaonna."
+  },
+  "NSMicrophoneUsageDescription": {
+    "messageformat": "Tá rochtain ar do mhicreafón de dhíth ar Signal chun glaonna a chur nó a fháil, agus chun glórphoist a thaifeadadh."
+  }
+}

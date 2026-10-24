@@ -1,0 +1,1 @@
+signal,zpráva,messenger,volání,hlas,šifrováno,soukromí,zabezpečení,skupina,video,chat,příběhy

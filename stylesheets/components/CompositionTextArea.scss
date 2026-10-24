@@ -1,6 +1,9 @@
 // Copyright 2022 Signal Messenger, LLC
 // SPDX-License-Identifier: AGPL-3.0-only
 
+@use '../mixins';
+@use '../variables';
+
 .CompositionTextArea {
   position: relative;
 
@@ -11,28 +14,14 @@
       border-radius: 0;
       height: 100%;
 
-      &:focus-within {
-        border: none;
-      }
-
-      @include dark-theme() {
-        border: none;
-
-        &:focus-within {
-          border: none;
-        }
-      }
-
-      @include keyboard-mode {
-        &:focus-within {
-          border: solid 1px $color-ultramarine;
-        }
+      &[data-focus-visible='true'] {
+        border: solid 1px variables.$color-ultramarine;
       }
     }
 
     &__input__scroller {
       max-height: 300px;
-      min-height: 300px;
+      min-height: 100px;
       padding: 16px;
       // Need more padding on the right to make room for floating emoji button
       padding-inline-end: 36px;
@@ -45,13 +34,13 @@
     top: 8px;
 
     button::after {
-      background-color: $color-black;
+      background-color: variables.$color-black;
     }
   }
 
   &__remaining-character-count {
-    @include font-subtitle;
-    color: $color-gray-45;
+    @include mixins.font-subtitle;
+    color: variables.$color-gray-45;
     position: absolute;
     bottom: 0;
     inset-inline-start: 0;

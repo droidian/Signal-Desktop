@@ -1,0 +1,120 @@
+// Copyright 2022 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { assert } from 'chai';
+
+import type { PrimaryDevice } from '@signalapp/mock-server';
+import * as durations from '../../util/durations/index.std.ts';
+import type { App, Bootstrap } from './fixtures.node.ts';
+import { initStorage, debug } from './fixtures.node.ts';
+
+describe('storage service', function (this: Mocha.Suite) {
+  this.timeout(durations.MINUTE);
+
+  let bootstrap: Bootstrap;
+  let app: App;
+
+  beforeEach(async () => {
+    ({ bootstrap, app } = await initStorage());
+  });
+
+  afterEach(async function (this: Mocha.Context) {
+    if (!bootstrap) {
+      return;
+    }
+
+    await bootstrap.maybeSaveLogs(this.currentTest, app);
+    await app.close();
+    await bootstrap.teardown();
+  });
+
+  it('should archive/unarchive contacts', async () => {
+    const { phone, contacts } = bootstrap;
+    const [firstContact] = contacts as [PrimaryDevice];
+
+    const window = await app.getWindow();
+
+    const leftPane = window.locator('#LeftPane');
+    const conversationStack = window.locator('.Inbox__conversation-stack');
+
+    debug('archiving contact');
+    {
+      const state = await phone.expectStorageState('consistency check');
+      const modifiedState = state
+        .updateContact(firstContact, { archived: true })
+        .unpin(firstContact);
+
+      const newState = await phone.setStorageState(modifiedState);
+      await phone.sendFetchStorage({
+        timestamp: bootstrap.getTimestamp(),
+      });
+
+      await leftPane
+        .locator(`[data-testid="${firstContact.device.aci}"]`)
+        .waitFor({ state: 'hidden' });
+
+      await leftPane
+        .locator('button.module-conversation-list__item--archive-button')
+        .waitFor();
+
+      await app.waitForManifestVersion(newState.version);
+    }
+
+    debug('unarchiving pinned contact');
+    {
+      const state = await phone.expectStorageState('consistency check');
+      const modifiedState = state
+        .updateContact(firstContact, {
+          archived: false,
+        })
+        .pin(firstContact);
+
+      const newState = await phone.setStorageState(modifiedState);
+      await phone.sendFetchStorage({
+        timestamp: bootstrap.getTimestamp(),
+      });
+
+      await leftPane
+        .locator(`[data-testid="${firstContact.device.aci}"]`)
+        .waitFor();
+
+      await leftPane
+        .locator('button.module-conversation-list__item--archive-button')
+        .waitFor({ state: 'hidden' });
+
+      await app.waitForManifestVersion(newState.version);
+    }
+
+    debug('archive pinned contact in the app');
+    {
+      const state = await phone.expectStorageState('consistency check');
+
+      await leftPane
+        .locator(`[data-testid="${firstContact.device.aci}"]`)
+        .click();
+
+      const moreButton = conversationStack.getByRole('button', {
+        name: 'More Info',
+      });
+      await moreButton.click();
+
+      const archiveButton = window.getByRole('menuitem', {
+        name: 'Archive',
+        exact: true,
+      });
+      await archiveButton.click();
+
+      assert.isTrue(state.isPinned(firstContact));
+      assert.isFalse(state.getContact(firstContact)?.archived);
+      await phone.waitForStorageState({
+        after: state,
+        predicate: storageState => {
+          return (
+            !storageState.isPinned(firstContact) &&
+            storageState.getContact(firstContact)?.archived === true
+          );
+        },
+      });
+    }
+  });
+});

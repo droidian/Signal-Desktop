@@ -1,0 +1,95 @@
+// Copyright 2019 Signal Messenger, LLC
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import type { Middleware, Store, UnknownAction } from 'redux';
+import { applyMiddleware, createStore as reduxCreateStore } from 'redux';
+
+import promise from 'redux-promise-middleware';
+import { thunk } from 'redux-thunk';
+import { createLogger as createReduxLogger } from 'redux-logger';
+
+import { createLogger } from '../logging/log.std.ts';
+import type { StateType } from './reducer.preload.ts';
+import { reducer } from './reducer.preload.ts';
+import { dispatchItemsMiddleware } from '../shims/dispatchItemsMiddleware.preload.ts';
+import { isOlderThan } from '../util/timestamp.std.ts';
+import { SECOND } from '../util/durations/index.std.ts';
+import { getEnvironment } from '../environment.std.ts';
+
+const log = createLogger('createStore');
+
+const env = getEnvironment();
+
+// Enabled by devs as-needed
+const REDUX_LOGGER_ENABLED = false;
+
+const logger = createReduxLogger({
+  predicate: (_getState, action) => {
+    if (action.type === 'network/CHECK_NETWORK_STATUS') {
+      return false;
+    }
+    if (action.type === 'calling/GROUP_CALL_AUDIO_LEVELS_CHANGE') {
+      return false;
+    }
+    if (action.type === 'calling/DIRECT_CALL_AUDIO_LEVELS_CHANGE') {
+      return false;
+    }
+    return true;
+  },
+});
+
+const ACTION_COUNT_THRESHOLD = 25;
+type ActionStats = {
+  timestamp: number;
+  names: Array<string>;
+};
+const actionStats: ActionStats = {
+  timestamp: Date.now(),
+  names: [],
+};
+const actionRateLogger: Middleware = () => next => _action => {
+  // oxlint-disable-next-line typescript/no-explicit-any
+  const action = _action as any as UnknownAction;
+  const name = action.type;
+  const lastTimestamp = actionStats.timestamp;
+  let count = actionStats.names.length;
+
+  if (isOlderThan(lastTimestamp, SECOND)) {
+    if (count > 0) {
+      actionStats.names = [];
+    }
+    actionStats.timestamp = Date.now();
+
+    return next(action);
+  }
+
+  actionStats.names.push(name);
+  count += 1;
+
+  if (count >= ACTION_COUNT_THRESHOLD) {
+    log.warn(
+      `ActionRateLogger: got ${count} events since ${lastTimestamp}: ${actionStats.names.join(',')}`
+    );
+
+    actionStats.names = [];
+    actionStats.timestamp = Date.now();
+  }
+
+  return next(action);
+};
+
+const middlewareList = [
+  promise,
+  thunk,
+  dispatchItemsMiddleware,
+  actionRateLogger,
+  ...(env === 'production' || !REDUX_LOGGER_ENABLED ? [] : [logger]),
+];
+
+const enhancer = applyMiddleware(...middlewareList);
+
+export const createStore = (
+  initialState: Readonly<StateType>
+): Store<StateType> =>
+  // oxlint-disable-next-line typescript/no-explicit-any
+  reduxCreateStore<any, any>(reducer, initialState, enhancer);
